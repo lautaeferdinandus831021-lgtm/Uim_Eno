@@ -1,3 +1,4 @@
 export { CandleChart } from "./CandleChart";
-export { MacdPanel } from "./MacdPanel";
 export { EquityCurve } from "./EquityCurve";
+export { LiveCandleChart } from "./LiveCandleChart";
+export { LiveMacdPanel } from "./LiveMacdPanel";

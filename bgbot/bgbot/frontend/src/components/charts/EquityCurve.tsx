@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 import { createChart, IChartApi, Time } from "lightweight-charts";
 
 interface Point { time: number; value: number; }
-
 interface Props { data: Point[]; height?: number; }
 
 export function EquityCurve({ data, height = 200 }: Props) {
@@ -18,22 +17,16 @@ export function EquityCurve({ data, height = 200 }: Props) {
       rightPriceScale: { borderColor: "#1a2536" },
       timeScale: { borderColor: "#1a2536", timeVisible: true },
     });
-
     const series = chart.addAreaSeries({
-      topColor: "rgba(0, 212, 170, 0.3)",
-      bottomColor: "rgba(0, 212, 170, 0.02)",
-      lineColor: "#00d4aa",
-      lineWidth: 2,
-      priceLineVisible: false,
+      topColor: "rgba(0, 212, 170, 0.3)", bottomColor: "rgba(0, 212, 170, 0.02)",
+      lineColor: "#00d4aa", lineWidth: 2, priceLineVisible: false,
     });
     series.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
     chart.timeScale().fitContent();
-
     const ro = new ResizeObserver(() => {
       if (containerRef.current) chart.applyOptions({ width: containerRef.current.clientWidth });
     });
     ro.observe(containerRef.current);
-
     return () => { ro.disconnect(); chart.remove(); };
   }, [data, height]);
 

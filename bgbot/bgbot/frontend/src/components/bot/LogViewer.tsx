@@ -3,12 +3,8 @@ import { useRef, useEffect } from "react";
 import { useBotStore } from "@/lib/store";
 
 const levelColors: Record<string, string> = {
-  info: "text-blu",
-  success: "text-acc",
-  warn: "text-yel",
-  error: "text-red",
-  trade: "text-pur",
-  tf: "text-t3",
+  info: "text-blu", success: "text-acc", warn: "text-yel",
+  error: "text-red", trade: "text-pur", tf: "text-t3",
 };
 
 export function LogViewer() {

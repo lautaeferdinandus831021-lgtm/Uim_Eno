@@ -1,15 +1,8 @@
 "use client";
-
-interface Props {
-  label: string;
-  signal: string;
-  price: number;
-}
+interface Props { label: string; signal: string; price: number; }
 
 const signalColors: Record<string, string> = {
-  LONG: "text-acc",
-  SHORT: "text-red",
-  NEUTRAL: "text-t3",
+  LONG: "text-acc", SHORT: "text-red", NEUTRAL: "text-t3",
 };
 
 export function SignalDisplay({ label, signal, price }: Props) {

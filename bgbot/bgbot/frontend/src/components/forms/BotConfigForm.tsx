@@ -2,45 +2,60 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { api } from "@/lib/api";
-import { BotConfig } from "@/lib/types";
+
+interface BotCfg {
+  market_mode: string; symbol: string; order_size: number;
+  tp_percent: number; sl_percent: number; leverage: number;
+  macd_fast: number; macd_slow: number; macd_signal: number;
+  [key: string]: any;
+}
+
+const DEFAULT: BotCfg = {
+  market_mode: "spot", symbol: "BTCUSDT", order_size: 50,
+  tp_percent: 2.5, sl_percent: 1.5, leverage: 3,
+  macd_fast: 4, macd_slow: 5, macd_signal: 1,
+};
 
 interface Props { onSaved?: () => void; }
 
-const DEFAULT: BotConfig = {
-  market_mode: "spot", symbol: "BTCUSDT", order_size: 50, tp_percent: 2.5,
-  sl_percent: 1.5, leverage: 3, macd_fast: 4, macd_slow: 5, macd_signal: 1,
-};
-
 export function BotConfigForm({ onSaved }: Props) {
-  const [cfg, setCfg] = useState<BotConfig>(DEFAULT);
+  const [cfg, setCfg] = useState<BotCfg>(DEFAULT);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
   useEffect(() => {
-    api.getConfig().then(setCfg).catch(() => {});
+    api.getConfig().then((c: any) => { if (c && c.macd_fast !== undefined) setCfg(c); }).catch(() => {});
   }, []);
 
-  const set = <K extends keyof BotConfig>(key: K, val: BotConfig[K]) => setCfg((p) => ({ ...p, [key]: val }));
+  const set = <K extends keyof BotCfg>(key: K, val: BotCfg[K]) => setCfg((p) => ({ ...p, [key]: val }));
 
   const handleSave = async () => {
     setLoading(true);
-    try {
-      await api.saveConfig(cfg);
-      setMsg("Config saved!");
-      onSaved?.();
-    } catch (e: any) {
-      setMsg(e.message);
-    }
+    try { await api.saveConfig(cfg); setMsg("Config saved!"); onSaved?.(); }
+    catch(e:any) { setMsg(e.message); }
     setLoading(false);
   };
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <Select label="Market Mode" value={cfg.market_mode} onChange={(e) => set("market_mode", e.target.value)} options={[{ value: "spot", label: "Spot" }, { value: "perp", label: "Perpetual" }]} />
-        <Select label="Symbol" value={cfg.symbol} onChange={(e) => set("symbol", e.target.value)} options={[{ value: "BTCUSDT", label: "BTC/USDT" }, { value: "ETHUSDT", label: "ETH/USDT" }, { value: "SOLUSDT", label: "SOL/USDT" }, { value: "BNBUSDT", label: "BNB/USDT" }]} />
+        <div>
+          <label className="text-t2 text-xs font-medium block mb-1">Market Mode</label>
+          <select value={cfg.market_mode} onChange={(e) => set("market_mode", e.target.value)} className="w-full px-3 py-2 bg-bg-3 border border-border rounded-md text-t1 text-sm focus:outline-none focus:border-acc">
+            <option value="spot">Spot</option>
+            <option value="perp">Perpetual</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-t2 text-xs font-medium block mb-1">Symbol</label>
+          <select value={cfg.symbol} onChange={(e) => set("symbol", e.target.value)} className="w-full px-3 py-2 bg-bg-3 border border-border rounded-md text-t1 text-sm focus:outline-none focus:border-acc">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+          </select>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
         <Input label="Order Size ($)" type="number" value={cfg.order_size} onChange={(e) => set("order_size", +e.target.value)} />
