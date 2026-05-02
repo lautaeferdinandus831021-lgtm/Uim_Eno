@@ -1,0 +1,10 @@
+celery==5.3.6
+redis==5.0.1
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+pandas==2.1.4
+numpy==1.26.2
+requests==2.31.0
+cryptography==41.0.7
+pyotp==2.9.0
+pydantic-settings==2.1.0

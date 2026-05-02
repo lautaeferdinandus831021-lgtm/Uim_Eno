@@ -1,0 +1,16 @@
+*.db
+*.db-journal
+logs/
+*.log
+.env
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.DS_Store
+node_modules/
+.next/
+backups/*.csv
+*.egg-info/
+dist/
+build/
