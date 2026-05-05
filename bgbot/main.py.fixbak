@@ -291,7 +291,7 @@ async def run_bot_tick(user_id, db):
             user_client = await get_user_bitget(user_id, db)
             if user_client.is_configured:
                 order_side = "buy" if signal == "LONG" else "sell"
-                order_size = max(1, int(size * 1000))  # Convert to lots (0.001 BTC per lot)
+                order_size = max(1, int(size_btc * 1000))  # Convert to lots (0.001 BTC per lot)
                 order_result = await user_client.futures_market_open("BTCUSDT", "long" if signal == "LONG" else "short", order_size, leverage=10)
                 logger.info(f"REAL ORDER: {order_result}")
             else:
@@ -308,7 +308,7 @@ async def run_bot_tick(user_id, db):
         }
 
         side_str = "BUY" if signal == "LONG" else "SELL"
-        log_entry = {"time": datetime.now().strftime("%H:%M:%S"), "msg": f"{side_str} {pair} @ ${current_price:,.2f} | TP: ${tp:,.2f} SL: ${sl:,.2f} | M1={analysis['m1']['signal']} M5={analysis['m5']['signal']}", "pnl": 0}
+        log_entry = {"time": datetime.now().strftime("%H:%M:%S"), "msg": f"{side_str} {pair} @ ${current_price:,.2f} | TP: ${tp:,.2f} SL: ${sl:,.2f} | M1={analysis['m1']['signal']} M5={analysis['5']['signal'] if '5' in analysis else analysis['m5']['signal']}", "pnl": 0}
         bot_trades_log.append(log_entry)
         return log_entry
     else:
@@ -597,6 +597,14 @@ async def bot_status(user: User = Depends(get_current_user), db: AsyncSession = 
         "m1": m1 if isinstance(m1, dict) else {},
         "m5": m5 if isinstance(m5, dict) else {},
         "aligned": bot_analysis.get("aligned", False),
+        "m1_momentum": m1.get("momentum", "N/A"),
+        "m5_momentum": m5.get("momentum", "N/A"),
+        "m1_volatility": m1.get("volatility", 0),
+        "m5_volatility": m5.get("volatility", 0),
+        "m1_momentum": m1.get("momentum", "N/A"),
+        "m5_momentum": m5.get("momentum", "N/A"),
+        "m1_volatility": m1.get("volatility", 0),
+        "m5_volatility": m5.get("volatility", 0),
         "trade_signal": bot_analysis.get("trade_signal", "NEUTRAL"),
         "positions": [position_info] if position_info else [],
         "logs": bot_trades_log[-30:],
@@ -628,22 +636,6 @@ async def update_api_config(body: dict, user: User = Depends(get_current_user), 
 
 
 # ===== BACKTEST ROUTES =====
-
-
-@app.get("/api/trades/export")
-async def export_trades_csv(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    import csv, io
-    from fastapi.responses import StreamingResponse
-    result = await db.execute(select(Trade).where(Trade.user_id == user.id).order_by(Trade.id.desc()))
-    trades = result.scalars().all()
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["id","time","mode","side","pair","price","size","pnl","pnl_pct","status"])
-    for t in trades:
-        writer.writerow([t.id, str(t.trade_time), t.mode, t.side, t.pair, t.price, t.size, t.pnl, t.pnl_pct, t.status])
-    output.seek(0)
-    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=trades.csv"})
 
 # ===== MARKET DATA (Real Bitget) =====
 
