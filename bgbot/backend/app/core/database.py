@@ -1,9 +1,17 @@
+import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
-from shared.config import settings
 
-url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-engine = create_async_engine(url, echo=settings.DEBUG, pool_size=20, max_overflow=10, pool_pre_ping=True)
+DB_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///./bgbot.db")
+
+# Fix URL for sqlite
+if DB_URL.startswith("sqlite"):
+    engine = create_async_engine(DB_URL, echo=False)
+else:
+    # Fallback to sqlite if postgres not available
+    DB_URL = "sqlite+aiosqlite:///./bgbot.db"
+    engine = create_async_engine(DB_URL, echo=False)
+
 AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

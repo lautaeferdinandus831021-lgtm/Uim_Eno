@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BG-BOT v5</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--surface:#141414;--surface2:#1c1c1c;--border:#2a2a2a;--acc:#00d4aa;--red:#ff4757;--t1:#f0ece4;--t2:#a09a90;--t3:#5a5550;--radius:10px}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(0,212,170,.03) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(0,212,170,.02) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;z-index:100;backdrop-filter:blur(20px)}
+nav .logo{font-family:'Instrument Serif',serif;font-size:20px;color:var(--t1);margin-right:24px}
+nav .logo span{color:var(--acc)}
+nav .links{display:flex;gap:4px;overflow-x:auto;flex:1}
+nav .links a{color:var(--t3);text-decoration:none;font-size:11px;padding:6px 12px;border-radius:6px;white-space:nowrap;transition:all .2s}
+nav .links a:hover,nav .links a.active{color:var(--t1);background:var(--surface2)}
+nav .status{display:flex;align-items:center;gap:8px;font-size:11px}
+nav .dot{width:8px;height:8px;border-radius:50%;background:var(--t3)}
+nav .dot.on{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+
+/* MAIN */
+main{padding:68px 16px 24px;max-width:1200px;margin:0 auto;position:relative;z-index:1}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;transition:border-color .2s}
+.card:hover{border-color:#3a3a3a}
+.card h3{font-size:12px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.card .value{font-size:24px;font-weight:500}
+.card .sub{font-size:11px;color:var(--t3);margin-top:4px}
+
+/* GRID */
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 20px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;background:var(--surface);color:var(--t1)}
+.btn:hover{border-color:var(--acc);color:var(--acc);letter-spacing:.04em}
+.btn.acc{background:var(--acc);color:var(--bg);border-color:var(--acc)}
+.btn.acc:hover{background:#00eabb}
+.btn.red{border-color:var(--red);color:var(--red)}
+.btn.red:hover{background:var(--red);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* INPUT */
+input,select{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--t1);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--acc)}
+label{display:block;font-size:11px;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse;font-size:11px}
+.table th{text-align:left;padding:8px;color:var(--t3);border-bottom:1px solid var(--border);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.table td{padding:8px;border-bottom:1px solid rgba(42,42,42,.5);color:var(--t2)}
+.table tr:hover td{color:var(--t1)}
+.green{color:var(--acc)}.red-c{color:var(--red)}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
+.badge.acc{background:rgba(0,212,170,.1);color:var(--acc)}
+.badge.red{background:rgba(255,71,87,.1);color:var(--red)}
+.badge.neutral{background:rgba(160,154,144,.1);color:var(--t2)}
+
+/* LOGS */
+.logs{max-height:300px;overflow-y:auto;font-size:11px;line-height:1.8;color:var(--t3)}
+.logs .log-time{color:var(--t3);margin-right:8px}
+.logs .log-info{color:var(--t2)}
+.logs .log-warn{color:#f0a500}
+.logs .log-err{color:var(--red)}
+
+/* AUTH PAGE */
+.auth-page{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-box{width:100%;max-width:360px}
+.auth-box h1{font-family:'Instrument Serif',serif;font-size:32px;text-align:center;margin-bottom:8px}
+.auth-box h1 span{color:var(--acc)}
+.auth-box p{text-align:center;color:var(--t3);font-size:12px;margin-bottom:32px}
+.auth-box .error{background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);color:var(--red);font-size:12px;padding:10px;border-radius:8px;margin-bottom:16px;display:none}
+.auth-box .field{margin-bottom:16px}
+
+/* ANIMATE */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+main>*{animation:fadeUp .4s ease forwards;opacity:0}
+main>*:nth-child(1){animation-delay:.05s}
+main>*:nth-child(2){animation-delay:.1s}
+main>*:nth-child(3){animation-delay:.15s}
+main>*:nth-child(4){animation-delay:.2s}
+main>*:nth-child(5){animation-delay:.25s}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .card .value{font-size:18px}
+  nav .links a{padding:6px 8px;font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- AUTH PAGE -->
+<div id="authPage" class="auth-page">
+  <div class="auth-box">
+    <h1>BG-BOT <span>v5</span></h1>
+    <p>Sign in to your account</p>
+    <div id="authError" class="error"></div>
+    <div id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" placeholder="test@test.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="mypassword123"></div>
+      <button class="btn acc" style="width:100%" onclick="doLogin()">Sign In</button>
+      <p style="margin-top:16px;text-align:center"><a href="#" onclick="showRegister()" style="color:var(--acc);text-decoration:none;font-size:12px">Create account</a></p>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div class="field"><label>Name</label><input type="text" id="regName" placeholder="Your name"></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="test@test.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="regPass" placeholder="mypassword123"></div>
+      <button class="btn acc" style="width:100%" onclick="doRegister()">Create Account</button>
+      <p style="margin-top:16px;text-align:center"><a href="#" onclick="showLogin()" style="color:var(--acc);text-decoration:none;font-size:12px">Back to login</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashPage" style="display:none">
+  <nav>
+    <div class="logo">BG-BOT <span>v5</span></div>
+    <div class="links">
+      <a href="#" class="active" onclick="showTab('overview')">Overview</a>
+      <a href="#" onclick="showTab('trades')">Trades</a>
+      <a href="#" onclick="showTab('bot')">Bot</a>
+      <a href="#" onclick="showTab('backtest')">Backtest</a>
+      <a href="#" onclick="showTab('config')">Config</a>
+    </div>
+    <div class="status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText" style="color:var(--t3)">Offline</span>
+    </div>
+  </nav>
+
+  <main id="mainContent"></main>
+</div>
+
+<script>
+const API = '';
+let TOKEN = localStorage.getItem('bgbot_token');
+let USER = null;
+
+// ===== API HELPERS =====
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  if (res.status === 401) { logout(); return null; }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Error');
+  return data;
+}
+
+// ===== AUTH =====
+function showLogin() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('authError').style.display = 'none';
+}
+function showRegister() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('authError').style.display = 'none';
+}
+
+async function doLogin() {
+  try {
+    document.getElementById('authError').style.display = 'none';
+    const data = await api('POST', '/auth/login', {
+      email: document.getElementById('loginEmail').value,
+      password: document.getElementById('loginPass').value,
+    });
+    TOKEN = data.access_token;
+    USER = data.user;
+    localStorage.setItem('bgbot_token', TOKEN);
+    showDashboard();
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+async function doRegister() {
+  try {
+    document.getElementById('authError').style.display = 'none';
+    const pass = document.getElementById('regPass').value;
+    await api('POST', '/auth/register', {
+      name: document.getElementById('regName').value,
+      email: document.getElementById('regEmail').value,
+      password: pass,
+      confirm: pass,
+    });
+    showLogin();
+    document.getElementById('loginEmail').value = document.getElementById('regEmail').value;
+    showError('Account created! Please sign in.', false);
+  } catch (e) {
+    showError(e.message);
+  }
+}
+
+function showError(msg, isErr = true) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = isErr ? 'rgba(255,71,87,.1)' : 'rgba(0,212,170,.1)';
+  el.style.borderColor = isErr ? 'rgba(255,71,87,.3)' : 'rgba(0,212,170,.3)';
+  el.style.color = isErr ? 'var(--red)' : 'var(--acc)';
+}
+
+function logout() {
+  TOKEN = null;
+  USER = null;
+  localStorage.removeItem('bgbot_token');
+  document.getElementById('authPage').style.display = 'flex';
+  document.getElementById('dashPage').style.display = 'none';
+}
+
+// ===== DASHBOARD =====
+async function showDashboard() {
+  document.getElementById('authPage').style.display = 'none';
+  document.getElementById('dashPage').style.display = 'block';
+  document.getElementById('statusDot').classList.add('on');
+  document.getElementById('statusText').textContent = 'Connected';
+  if (!USER) {
+    try { USER = await api('GET', '/auth/me'); } catch(e) {}
+  }
+  showTab('overview');
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.links a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.links a[onclick="showTab('${tab}')"]`).classList.add('active');
+  window['render_' + tab]();
+}
+
+// ===== RENDER: OVERVIEW =====
+async function render_overview() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="color:var(--t3);font-size:12px">Loading...</div>';
+
+  const [stats, botStatus, trades] = await Promise.all([
+    api('GET', '/api/trades/stats').catch(() => ({})),
+    api('GET', '/api/bot/status').catch(() => ({})),
+    api('GET', '/api/trades?limit=5').catch(() => []),
+  ]);
+
+  main.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div><h2 style="font-size:18px;font-weight:500">Dashboard</h2><p style="font-size:11px;color:var(--t3)">Welcome back, ${USER?.name || 'User'}</p></div>
+      <button class="btn red" onclick="logout()" style="font-size:11px">Logout</button>
+    </div>
+
+    <div class="grid g4">
+      <div class="card"><h3>Balance</h3><div class="value green">$${(botStatus.balance||10000).toFixed(2)}</div></div>
+      <div class="card"><h3>Trades</h3><div class="value">{stats.total||0}</div><div class="sub">${stats.wins||0}W / ${stats.losses||0}L</div></div>
+      <div class="card"><h3>Win Rate</h3><div class="value">${stats.win_rate||0}%</div></div>
+      <div class="card"><h3>Total PnL</h3><div class="value ${(stats.total_pnl||0)>=0?'green':'red-c'}">$$$${(stats.total_pnl||0).toFixed(2)}</div></div>
+    </div>
+
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card">
+        <h3>Bot Status</h3>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="dot ${botStatus.running?'on':''}"></div>
+          <span style="font-size:13px">${botStatus.running?'Running':'Stopped'}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t3)">
+          <div>Symbol: ${botStatus.symbol||'BTCUSDT'}</div>
+          <div>M1: <span class="badge ${botStatus.m1?.signal==='LONG'?'acc':botStatus.m1?.signal==='SHORT'?'red':'neutral'}">${botStatus.m1?.signal||'NEUTRAL'}</span></div>
+          <div>M5: <span class="badge ${botStatus.m5?.signal==='LONG'?'acc':botStatus.m5?.signal==='SHORT'?'red':'neutral'}">${botStatus.m5?.signal||'NEUTRAL'}</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Recent Trades</h3>
+        ${trades.length === 0 ? '<div style="font-size:11px;color:var(--t3)">No trades yet</div>' :
+          '<table class="table"><tr><th>Side</th><th>Pair</th><th>PnL</th></tr>' +
+          trades.slice(0,5).map(t => `<tr><td><span class="badge ${t.side==='buy'?'acc':'red'}">${t.side.toUpperCase()}</span></td><td>${t.pair}</td><td class="${t.pnl>=0?'green':'red-c'}">$${t.pnl.toFixed(2)}</td></tr>`).join('') +
+          '</table>'}
+      </div>
+    </div>
+  `;
+}
+
+// ===== RENDER: TRADES =====
+async function render_trades() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="color:var(--t3);font-size:12px">Loading trades...</div>';
+  const trades = await api('GET', '/api/trades?limit=100').catch(() => []);
+
+  main.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h2 style="font-size:18px;font-weight:500">Trade History</h2>
+      <span style="font-size:11px;color:var(--t3)">{trades.length} trades</span>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      ${trades.length === 0 ? '<div style="text-align:center;color:var(--t3);padding:40px;font-size:12px">No trades yet. Start the bot or run a backtest.</div>' :
+      '<table class="table"><tr><th>#</th><th>Time</th><th>Mode</th><th>Side</th><th>Pair</th><th>Price</th><th>PnL</th><th>Status</th></tr>' +
+      trades.map((t, i) => `<tr><td>${i+1}</td><td>${(t.trade_time||'').slice(0,19)}</td><td><span class="badge neutral">${t.mode}</span></td><td><span class="badge ${t.side==='buy'?'acc':'red'}">${t.side.toUpperCase()}</span></td><td>${t.pair}</td><td>$$$${t.price.toLocaleString()}</td><td class="${t.pnl>=0?'green':'red-c'}">$${t.pnl.toFixed(2)}</td><td>{t.status}</td></tr>`).join('') +
+      '</table>'}
+    </div>
+  `;
+}
+
+// ===== RENDER: BOT =====
+async function render_bot() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="color:var(--t3);font-size:12px">Loading...</div>';
+  const [status, config] = await Promise.all([
+    api('GET', '/api/bot/status').catch(() => ({})),
+    api('GET', '/api/bot/config').catch(() => ({config:{}})),
+  ]);
+  const cfg = config.config || {};
+
+  main.innerHTML = `
+    <h2 style="font-size:18px;font-weight:500;margin-bottom:16px">Bot Control</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Control</h3>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="btn acc" onclick="startBot();return false">Start Bot</button>
+          <button class="btn red" onclick="stopBot();return false">Stop Bot</button>
+        </div>
+        <div style="font-size:11px;color:var(--t3)">
+          <div>Status: <span class="badge ${status.running?'acc':'neutral'}">${status.running?'Running':'Stopped'}</span></div>
+          <div>Mode: ${status.mode||'spot'}</div>
+          <div>Symbol: ${status.symbol||'BTCUSDT'}</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>MACD Config</h3>
+        <div class="grid g2" style="gap:8px">
+          <div><label>Fast</label><input type="number" id="cfgFast" value="${cfg.macd_fast||4}"></div>
+          <div><label>Slow</label><input type="number" id="cfgSlow" value="${cfg.macd_slow||5}"></div>
+          <div><label>Signal</label><input type="number" id="cfgSignal" value="${cfg.macd_signal||1}"></div>
+          <div><label>TP %</label><input type="number" id="cfgTP" value="${cfg.tp_percent||2.5}" step="0.1"></div>
+          <div><label>SL %</label><input type="number" id="cfgSL" value="${cfg.sl_percent||1.5}" step="0.1"></div>
+          <div><label>Size $</label><input type="number" id="cfgSize" value="${cfg.order_size||50}"></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="saveBotConfig();return false">Save Config</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3>Logs</h3>
+      <div class="logs" id="botLogs">
+        <div><span class="log-time">--:--:--</span><span class="log-info">Bot not running. Click Start to begin.</span></div>
+      </div>
+    </div>
+  `;
+}
+
+async function startBot() {
+  try {
+    await api('POST', '/api/bot/start');
+    addLog('Bot started');
+    render_bot();
+  } catch(e) { addLog('Error: ' + e.message, true); }
+}
+
+async function stopBot() {
+  try {
+    await api('POST', '/api/bot/stop');
+    addLog('Bot stopped');
+    render_bot();
+  } catch(e) { addLog('Error: ' + e.message, true); }
+}
+
+async function saveBotConfig() {
+  try {
+    await api('POST', '/api/bot/config', {
+      macd_fast: +document.getElementById('cfgFast').value,
+      macd_slow: +document.getElementById('cfgSlow').value,
+      macd_signal: +document.getElementById('cfgSignal').value,
+      tp_percent: +document.getElementById('cfgTP').value,
+      sl_percent: +document.getElementById('cfgSL').value,
+      order_size: +document.getElementById('cfgSize').value,
+    });
+    addLog('Config saved');
+  } catch(e) { addLog('Error: ' + e.message, true); }
+}
+
+function addLog(msg, isErr = false) {
+  const el = document.getElementById('botLogs');
+  if (!el) return;
+  const time = new Date().toLocaleTimeString();
+  el.innerHTML += `<div><span class="log-time">${time}</span><span class="${isErr?'log-err':'log-info'}">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ===== RENDER: BACKTEST =====
+async function render_backtest() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="color:var(--t3);font-size:12px">Loading...</div>';
+  const history = await api('GET', '/api/backtest/history').catch(() => []);
+
+  main.innerHTML = `
+    <h2 style="font-size:18px;font-weight:500;margin-bottom:16px">Backtest</h2>
+    <div class="card">
+      <h3>Configuration</h3>
+      <div class="grid g4" style="gap:8px">
+        <div><label>Symbol</label><select id="btSymbol"><option>BTCUSDT</option><option>ETHUSDT</option><option>SOLUSDT</option></select></div>
+        <div><label>Days</label><input type="number" id="btDays" value="7"></div>
+        <div><label>Balance $</label><input type="number" id="btBalance" value="10000"></div>
+        <div><label>Size $</label><input type="number" id="btSize" value="50"></div>
+      </div>
+      <button class="btn acc" style="margin-top:12px" id="btRunBtn" onclick="runBacktest()">Run Backtest</button>
+    </div>
+    <div id="btResults"></div>
+    ${history.length > 0 ? `
+    <div class="card" style="margin-top:12px">
+      <h3>History</h3>
+      <table class="table">
+        <tr><th>Date</th><th>Return</th><th>Win Rate</th><th>Trades</th></tr>
+        ${history.map(h => {
+          const m = h.metrics || {};
+          return `<tr><td>${(h.created_at||'').slice(0,16)}</td><td class="${(m.total_return||0)>=0?'green':'red-c'}">$$$${m.total_return||0}</td><td>${m.win_rate||0}%</td><td>${m.total_trades||0}</td></tr>`;
+        }).join('')}
+      </table>
+    </div>` : ''}
+  `;
+}
+
+async function runBacktest() {
+  const btn = document.getElementById('btRunBtn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+
+  try {
+    const data = await api('POST', '/api/backtest', {
+      symbol: document.getElementById('btSymbol').value,
+      days: +document.getElementById('btDays').value,
+      initial_balance: +document.getElementById('btBalance').value,
+      config: { order_size: +document.getElementById('btSize').value },
+    });
+
+    const m = data.metrics;
+    const el = document.getElementById('btResults');
+    el.innerHTML = `
+      <div class="grid g4" style="margin-top:12px">
+        <div class="card"><h3>Return</h3><div class="value ${m.total_return>=0?'green':'red-c'}">$${m.total_return}</div><div class="sub">{m.total_return_pct}%</div></div>
+        <div class="card"><h3>Win Rate</h3><div class="value">${m.win_rate}%</div><div class="sub">${m.wins}W / ${m.losses}L</div></div>
+        <div class="card"><h3>Max DD</h3><div class="value red-c">${m.max_drawdown_pct}%</div></div>
+        <div class="card"><h3>Sharpe</h3><div class="value">${m.sharpe_ratio}</div></div>
+      </div>
+      <div class="card" style="margin-top:12px;overflow-x:auto">
+        <h3>Trades (${m.total_trades})</h3>
+        <table class="table">
+          <tr><th>#</th><th>Side</th><th>Entry</th><th>Exit</th><th>PnL</th><th>Exit</th></tr>
+          ${data.trades.slice(0, 20).map((t, i) => `
+            <tr>
+              <td>${i+1}</td>
+              <td><span class="badge ${t.side==='LONG'?'acc':'red'}">${t.side}</span></td>
+              <td>$$$${t.entry.toLocaleString()}</td>
+              <td>$${t.exit.toLocaleString()}</td>
+              <td class="{t.pnl>=0?'green':'red-c'}">$$$${t.pnl}</td>
+              <td>${t.exit_type}</td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('btResults').innerHTML = `<div class="card" style="border-color:var(--red)"><div style="color:var(--red);font-size:12px">Error: ${e.message}</div></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Run Backtest';
+}
+
+// ===== RENDER: CONFIG =====
+async function render_config() {
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '<div style="color:var(--t3);font-size:12px">Loading...</div>';
+  const cfg = await api('GET', '/api/config').catch(() => ({}));
+
+  main.innerHTML = `
+    <h2 style="font-size:18px;font-weight:500;margin-bottom:16px">Configuration</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>API Keys (Bitget)</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div><label>API Key</label><input type="text" id="cfgApiKey" placeholder="Enter API key"></div>
+          <div><label>API Secret</label><input type="password" id="cfgApiSecret" placeholder="Enter API secret"></div>
+          <div><label>Passphrase</label><input type="password" id="cfgApiPass" placeholder="Enter passphrase"></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="checkbox" id="cfgDemo" ${cfg.demo?'checked':''} style="width:auto">
+            <label style="margin:0">Demo Mode</label>
+          </div>
+          <button class="btn" onclick="saveApiConfig()">Save API Config</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Account</h3>
+        <div style="font-size:12px;color:var(--t2);margin-bottom:16px">
+          <div>Email: ${USER?.email||'-'}</div>
+          <div>Name: ${USER?.name||'-'}</div>
+          <div>ID: ${USER?.id||'-'}</div>
+        </div>
+        <button class="btn red" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  `;
+}
+
+async function saveApiConfig() {
+  try {
+    await api('POST', '/api/config', {
+      api_key: document.getElementById('cfgApiKey').value,
+      api_secret: document.getElementById('cfgApiSecret').value,
+      api_passphrase: document.getElementById('cfgApiPass').value,
+      demo: document.getElementById('cfgDemo').checked,
+    });
+    alert('API config saved!');
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ===== INIT =====
+(async () => {
+  if (TOKEN) {
+    try {
+      USER = await api('GET', '/auth/me');
+      showDashboard();
+    } catch(e) {
+      logout();
+    }
+  }
+})();
+
+// === BUTTON WRAPPERS ===
+async function doStartBot() {
+  try {
+    const r = await api('POST', '/api/bot/start');
+    addLog('Bot started: ' + JSON.stringify(r));
+    render_bot();
+  } catch(e) {
+    addLog('Start error: ' + e.message, true);
+    alert('Start error: ' + e.message);
+  }
+}
+
+async function doStopBot() {
+  try {
+    const r = await api('POST', '/api/bot/stop');
+    addLog('Bot stopped: ' + JSON.stringify(r));
+    render_bot();
+  } catch(e) {
+    addLog('Stop error: ' + e.message, true);
+    alert('Stop error: ' + e.message);
+  }
+}
+
+async function doSaveConfig() {
+  try {
+    const cfg = {
+      macd_fast: parseInt(document.getElementById('cfgFast').value) || 4,
+      macd_slow: parseInt(document.getElementById('cfgSlow').value) || 5,
+      macd_signal: parseInt(document.getElementById('cfgSignal').value) || 1,
+      tp_percent: parseFloat(document.getElementById('cfgTP').value) || 2.5,
+      sl_percent: parseFloat(document.getElementById('cfgSL').value) || 1.5,
+      order_size: parseInt(document.getElementById('cfgSize').value) || 50,
+    };
+    const r = await api('POST', '/api/bot/config', cfg);
+    addLog('Config saved: ' + JSON.stringify(cfg));
+    alert('Config saved!');
+  } catch(e) {
+    addLog('Save error: ' + e.message, true);
+    alert('Save error: ' + e.message);
+  }
+}
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/eruda">
+// === BUTTON WRAPPERS ===
+async function doStartBot() {
+  try {
+    const r = await api('POST', '/api/bot/start');
+    addLog('Bot started: ' + JSON.stringify(r));
+    render_bot();
+  } catch(e) {
+    addLog('Start error: ' + e.message, true);
+    alert('Start error: ' + e.message);
+  }
+}
+
+async function doStopBot() {
+  try {
+    const r = await api('POST', '/api/bot/stop');
+    addLog('Bot stopped: ' + JSON.stringify(r));
+    render_bot();
+  } catch(e) {
+    addLog('Stop error: ' + e.message, true);
+    alert('Stop error: ' + e.message);
+  }
+}
+
+async function doSaveConfig() {
+  try {
+    const cfg = {
+      macd_fast: parseInt(document.getElementById('cfgFast').value) || 4,
+      macd_slow: parseInt(document.getElementById('cfgSlow').value) || 5,
+      macd_signal: parseInt(document.getElementById('cfgSignal').value) || 1,
+      tp_percent: parseFloat(document.getElementById('cfgTP').value) || 2.5,
+      sl_percent: parseFloat(document.getElementById('cfgSL').value) || 1.5,
+      order_size: parseInt(document.getElementById('cfgSize').value) || 50,
+    };
+    const r = await api('POST', '/api/bot/config', cfg);
+    addLog('Config saved: ' + JSON.stringify(cfg));
+    alert('Config saved!');
+  } catch(e) {
+    addLog('Save error: ' + e.message, true);
+    alert('Save error: ' + e.message);
+  }
+}
+
+</script><script>eruda.init();
+// === BUTTON WRAPPERS ===
+async function doStartBot() {
+  try {
+    const r = await api('POST', '/api/bot/start');
+    addLog('Bot started: ' + JSON.stringify(r));
+    render_bot();
+  } catch(e) {
+    addLog('Start error: ' + e.message, true);
+    alert('Start error: ' + e.message);
+  }
+}
+
+async function doStopBot() {
+  try {
+    const r = await api('POST', '/api/bot/stop');
+    addLog('Bot stopped: ' + JSON.stringify(r));
+    render_bot();
+  } catch(e) {
+    addLog('Stop error: ' + e.message, true);
+    alert('Stop error: ' + e.message);
+  }
+}
+
+async function doSaveConfig() {
+  try {
+    const cfg = {
+      macd_fast: parseInt(document.getElementById('cfgFast').value) || 4,
+      macd_slow: parseInt(document.getElementById('cfgSlow').value) || 5,
+      macd_signal: parseInt(document.getElementById('cfgSignal').value) || 1,
+      tp_percent: parseFloat(document.getElementById('cfgTP').value) || 2.5,
+      sl_percent: parseFloat(document.getElementById('cfgSL').value) || 1.5,
+      order_size: parseInt(document.getElementById('cfgSize').value) || 50,
+    };
+    const r = await api('POST', '/api/bot/config', cfg);
+    addLog('Config saved: ' + JSON.stringify(cfg));
+    alert('Config saved!');
+  } catch(e) {
+    addLog('Save error: ' + e.message, true);
+    alert('Save error: ' + e.message);
+  }
+}
+
+</script></body>
+</html>
