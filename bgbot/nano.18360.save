@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "[BG-BOT] ONE COMMAND START"
+
+bash ~/Uim_Eno/bgbot/start_all.sh &
+bash ~/Uim_Eno/bgbot/ngrok_watch.sh &
