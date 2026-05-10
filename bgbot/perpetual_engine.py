@@ -686,7 +686,8 @@ perp_state = PerpState()
 perp_tasks = []
 
 
-async def start_perp_bot(api_key="", api_secret="", passphrase="", use_real=False):
+async def start_perp_bot(api_key="", api_secret="", passphrase="", use_real=False,
+    m1_fast=4, m1_slow=5, m1_sig=3, m5_fast=4, m5_slow=5, m5_sig=3):
     global perp_tasks
     if perp_state.running:
         return {"ok": False, "msg": "Already running"}
@@ -699,11 +700,12 @@ async def start_perp_bot(api_key="", api_secret="", passphrase="", use_real=Fals
     perp_state.candle_count = 0
     perp_state.prev_close = None
 
-    # Initialize streaming MACD
-    perp_state.macd_m1 = RealTimeMACD(fast_period=4, slow_period=5, signal_period=3)
-    perp_state.macd_m5 = RealTimeMACD(fast_period=4, slow_period=5, signal_period=3)
-    # Initialize M5 Burst Engine
-    perp_state.burst_engine = M5BurstEngine(fast=4, slow=5, signal=3)
+    # Initialize streaming MACD with CONFIG params
+    perp_state.macd_m1 = RealTimeMACD(fast_period=m1_fast, slow_period=m1_slow, signal_period=m1_sig)
+    perp_state.macd_m5 = RealTimeMACD(fast_period=m5_fast, slow_period=m5_slow, signal_period=m5_sig)
+    # Initialize M5 Burst Engine with CONFIG params
+    perp_state.burst_engine = M5BurstEngine(fast=m5_fast, slow=m5_slow, signal=m5_sig)
+    logger.info(f"PerpBot MACD: M1({m1_fast}-{m1_slow}-{m1_sig}) M5({m5_fast}-{m5_slow}-{m5_sig})")
 
     if HAS_WS:
         perp_tasks = [
