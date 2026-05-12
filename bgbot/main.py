@@ -749,6 +749,69 @@ async def get_orderbook(symbol: str = Query("BTCUSDT"), limit: int = Query(20, l
     return await client.get_orderbook(symbol, limit)
 
 
+
+@app.get("/api/market/footprint")
+async def get_footprint(symbol: str = Query("BTCUSDT"), bins: int = Query(40, le=80)):
+    """Process orderbook into footprint chart data (POC, HVA, Delta, Volume Profile)"""
+    try:
+        client = BitgetClient()
+        book = await client.get_orderbook(symbol, 50)
+        bids = book.get("bids", [])
+        asks = book.get("asks", [])
+        if not bids and not asks:
+            return {"bids": [], "asks": [], "poc": 0, "hva_low": 0, "hva_high": 0, "delta": [], "profile": [], "bid_vol": 0, "ask_vol": 0, "imbalance": 0}
+        all_px = []
+        for p, v in bids:
+            all_px.append({"price": p, "volume": v, "side": "bid"})
+        for p, v in asks:
+            all_px.append({"price": p, "volume": v, "side": "ask"})
+        if not all_px:
+            return {"bids": [], "asks": [], "poc": 0, "hva_low": 0, "hva_high": 0, "delta": [], "profile": [], "bid_vol": 0, "ask_vol": 0, "imbalance": 0}
+        price_min = min(x["price"] for x in all_px)
+        price_max = max(x["price"] for x in all_px)
+        if price_min == price_max:
+            price_max = price_min + 1
+        bin_width = (price_max - price_min) / bins
+        profile = []
+        for i in range(bins):
+            lo = price_min + i * bin_width
+            hi = lo + bin_width
+            mid = (lo + hi) / 2
+            bv = sum(x["volume"] for x in all_px if x["side"] == "bid" and lo <= x["price"] < hi)
+            av = sum(x["volume"] for x in all_px if x["side"] == "ask" and lo <= x["price"] < hi)
+            profile.append({"price": round(mid, 2), "bid_vol": round(bv, 6), "ask_vol": round(av, 6), "delta": round(bv - av, 6), "total": round(bv + av, 6)})
+        poc_entry = max(profile, key=lambda x: x["total"])
+        poc = poc_entry["price"]
+        sorted_p = sorted(profile, key=lambda x: x["total"], reverse=True)
+        total_vol = sum(x["total"] for x in sorted_p)
+        cum = 0
+        hva_prices = []
+        for p in sorted_p:
+            cum += p["total"]
+            hva_prices.append(p["price"])
+            if cum >= total_vol * 0.7:
+                break
+        hva_low = min(hva_prices) if hva_prices else poc
+        hva_high = max(hva_prices) if hva_prices else poc
+        delta_data = []
+        for p in profile:
+            if p["bid_vol"] > 0 or p["ask_vol"] > 0:
+                delta_data.append({"price": p["price"], "delta": p["delta"], "bid_vol": p["bid_vol"], "ask_vol": p["ask_vol"]})
+        total_bid = sum(v for _, v in bids[:20])
+        total_ask = sum(v for _, v in asks[:20])
+        denom = total_bid + total_ask
+        imbalance = (total_bid - total_ask) / denom if denom > 0 else 0
+        return {
+            "bids": [[p, v] for p, v in bids[:20]], "asks": [[p, v] for p, v in asks[:20]],
+            "poc": round(poc, 2), "hva_low": round(hva_low, 2), "hva_high": round(hva_high, 2),
+            "profile": profile, "delta": delta_data,
+            "bid_vol": round(total_bid, 4), "ask_vol": round(total_ask, 4), "imbalance": round(imbalance, 6),
+            "price_min": round(price_min, 2), "price_max": round(price_max, 2)
+        }
+    except Exception as e:
+        logger.error(f"footprint: {e}")
+        return {"bids": [], "asks": [], "poc": 0, "hva_low": 0, "hva_high": 0, "delta": [], "profile": [], "bid_vol": 0, "ask_vol": 0, "imbalance": 0, "error": str(e)}
+
 @app.get("/api/market/indicators")
 async def get_indicators(symbol: str = Query("BTCUSDT"), granularity: str = Query("1min"), limit: int = Query(100, le=500)):
     """Get klines with BB, MACD, RSI indicators using config params"""
@@ -820,6 +883,18 @@ async def get_indicators(symbol: str = Query("BTCUSDT"), granularity: str = Quer
         else: r["rsi_zone"] = "extreme_overbought"
     return {"symbol": symbol, "granularity": granularity, "candles": records, "config": {"bb_length": bb_len, "bb_std": bb_std, "rsi_length": rsi_len, "macd_fast": m_fast, "macd_slow": m_slow, "macd_signal": m_sig, "m1_bb_enabled": _config_store.get("m1_bb_enabled", True), "m1_macd_enabled": _config_store.get("m1_macd_enabled", True), "m1_rsi_enabled": _config_store.get("m1_rsi_enabled", True), "m5_bb_enabled": _config_store.get("m5_bb_enabled", True), "m5_macd_enabled": _config_store.get("m5_macd_enabled", True), "m5_rsi_enabled": _config_store.get("m5_rsi_enabled", True)}}
 
+
+
+@app.get("/api/market/candles")
+async def market_candles(symbol: str = "BTCUSDT", granularity: str = "5m", limit: int = 500):
+    """Proxy Bitget candle data for dashboard LWC charts."""
+    try:
+        client = BitgetClient()
+        candles = await client.get_klines(symbol, granularity, min(limit, 500))
+        return {"candles": candles if candles else []}
+    except Exception as e:
+        logger.error(f"Candles error: {e}")
+        return {"candles": [], "error": str(e)}
 
 
 @app.get("/api/market/signals")
