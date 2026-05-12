@@ -1594,370 +1594,191 @@ function _mktLoadIndicatorConfig(){
 </script>
 <script>
 // === CONFIG ===
+function _ic(k,n,c,on,h){return '<div style="background:var(--s2);border-radius:6px;padding:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:bold"><input type="checkbox" id="cfgInd'+k.toUpperCase()+'"'+(on?" checked":"")+"> "+'<span style="color:'+c+'">'+n+"</span></label>"+h+"</div>";}
+function _pf(ci,k,p,d,mn,mx){var v=(ci[k]&&ci[k][p]!==undefined)?ci[k][p]:d;return '<div style="flex:1"><label style="font-size:10px;color:var(--t3)">'+p.replace(/_/g," ")+'</label><input id="cfgInd'+k.toUpperCase()+"_"+p.toUpperCase()+'" class="input" type="number" step="any" value="'+v+'" min="'+mn+'" max="'+mx+'" style="margin:0"></div>';}
+function _sr(k,n,c,t,en,opts){return '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(42,42,42,0.3)"><input type="checkbox" id="cfg'+t+"_"+k+'"'+(en?" checked":"")+">"+'<span style="font-weight:bold;color:'+c+'">'+n+"</span>"+'<select class="input" id="cfg'+t+"Rule_"+k+'" style="margin:0">'+opts+"</select></div>";}
+function _o(v,l,sel){return '<option value="'+v+'"'+(sel?" selected":"")+">"+l+"</option>";}
 function renderConfig(c){
   if(window._cfgStatusInt){clearInterval(window._cfgStatusInt);window._cfgStatusInt=null;}
-  Promise.all([
-    api('GET','/api/config-public').catch(function(){return{};}),
-    api('GET','/api/bot/status-public').catch(function(){return{m1:{},m5:{}};}),
-    api('GET','/api/market/spot-symbols').catch(function(){return{symbols:[]};}),
-    api('GET','/api/market/futures-symbols').catch(function(){return{symbols:[]};})
-  ]).then(function(r){
-    var cfg=r[0]||{};var st=r[1]||{};
-    var spotPairs=r[2].symbols||[];var futPairs=r[3].symbols||[];
+  Promise.all([api('GET','/api/config-public').catch(function(){return{};}),api('GET','/api/bot/status-public').catch(function(){return{m1:{},m5:{}};}),api('GET','/api/market/spot-symbols').catch(function(){return{symbols:[]};}),api('GET','/api/market/futures-symbols').catch(function(){return{symbols:[]};})]).then(function(r){
+    var cfg=r[0]||{};var st=r[1]||{};var spotPairs=r[2].symbols||[];var futPairs=r[3].symbols||[];
     var m1=st.m1||{};var m5=st.m5||{};
-    var m1f=cfg.m1?cfg.m1.fast:4,m1s=cfg.m1?cfg.m1.slow:5,m1g=cfg.m1?cfg.m1.signal:3,m1src=cfg.m1?cfg.m1.source:'close';
-    var m1bbL=cfg.m1_bb_length||6,m1bbS=cfg.m1_bb_std||1.2,m1rsiL=cfg.m1_rsi_length||6;
-    var m1bbEn=cfg.m1_bb_enabled!==false,m1macdEn=cfg.m1_macd_enabled!==false,m1rsiEn=cfg.m1_rsi_enabled!==false;
-    var m5f=cfg.m5?cfg.m5.fast:4,m5s=cfg.m5?cfg.m5.slow:5,m5g=cfg.m5?cfg.m5.signal:3,m5src=cfg.m5?cfg.m5.source:'close';
-    var m5bbL=cfg.m5_bb_length||6,m5bbS=cfg.m5_bb_std||1.2,m5rsiL=cfg.m5_rsi_length||6;
-    var m5bbEn=cfg.m5_bb_enabled!==false,m5macdEn=cfg.m5_macd_enabled!==false,m5rsiEn=cfg.m5_rsi_enabled!==false;
-    var tm=cfg.mode||'spot',bt=cfg.balance_type||'demo',pair=cfg.pair||'BTCUSDT';
-    var os=cfg.order_size||0.001,tp=cfg.tp_percent||0.6,sl=cfg.sl_percent||0.3;
-    var pairs=tm==='perpetual'?futPairs:spotPairs;
-    if(!pairs.length)pairs=[pair];
-    var pairOpts=pairs.map(function(p){return '<option value="'+p+'"'+(p===pair?' selected':'')+'>'+p+'</option>';}).join('');
+    var tm=cfg.mode||"spot";var bt=cfg.balance_type||"demo";var pair=cfg.pair||"BTCUSDT";
+    var os=cfg.order_size||0.001;var tp=cfg.tp_percent||0.6;var sl=cfg.sl_percent||0.3;
+    var pairs=tm==="perpetual"?futPairs:spotPairs;if(!pairs.length)pairs=[pair];
+    var pairOpts=pairs.map(function(p){return '<option value="'+p+'"'+(p===pair?" selected":"")+">"+p+"</option>";}).join("");
+    var ci=cfg.chart_indicators||{};var m1En=cfg.m1_enabled!==false;var m5En=cfg.m5_enabled===true;
+    var m1c=cfg.m1||{};var m5c=cfg.m5||{};
+    var isOn=function(o){return o&&o.enabled!==false;};
 
-    // Chart indicators config with defaults
-    var ci=cfg.chart_indicators||{};
-    var dCi=function(k,d){return ci[k]!==undefined?ci[k]:d;};
-    var dCip=function(k,d){return ci[k]&&ci[k].period!==undefined?ci[k].period:d;};
-    var dCib=function(k,d){return ci[k]&&ci[k].buy_below!==undefined?ci[k].buy_below:d;};
-    var dCis=function(k,d){return ci[k]&&ci[k].sell_above!==undefined?ci[k].sell_above:d;};
+    var D={
+      ema:{n:'EMA',c:'#ff9f43',on:1,p:[{f:'period',d:20,mn:2,mx:500}],
+        br:[{v:'cross_above',l:'Price crosses above EMA'},{v:'above',l:'Price above EMA'},{v:'cross_up',l:'EMA crosses up SMA'}],
+        sr:[{v:'cross_below',l:'Price crosses below EMA'},{v:'below',l:'Price below EMA'},{v:'cross_down',l:'EMA crosses down SMA'}]},
+      sma:{n:'SMA',c:'#4682ff',on:0,p:[{f:'period',d:20,mn:2,mx:500}],
+        br:[{v:'cross_above',l:'Price crosses above SMA'},{v:'above',l:'Price above SMA'}],
+        sr:[{v:'cross_below',l:'Price crosses below SMA'},{v:'below',l:'Price below SMA'}]},
+      bb:{n:'Bollinger',c:'#aaa',on:1,p:[{f:'period',d:20,mn:2,mx:200},{f:'std',d:2,mn:0.5,mx:5}],
+        br:[{v:'at_lower',l:'Price at Lower Band'},{v:'below_lower',l:'Below Lower Band'},{v:'squeeze',l:'BB Squeeze release'}],
+        sr:[{v:'at_upper',l:'Price at Upper Band'},{v:'above_upper',l:'Above Upper Band'},{v:'cross_mid_down',l:'Cross below Middle'}]},
+      rsi:{n:'RSI',c:'#e8c547',on:1,p:[{f:'period',d:14,mn:2,mx:100}],
+        br:[{v:'cross_below',l:'RSI enters oversold'},{v:'cross_above_exit',l:'RSI exits oversold'},{v:'below',l:'RSI below level'}],
+        sr:[{v:'cross_above',l:'RSI enters overbought'},{v:'cross_below_exit',l:'RSI exits overbought'},{v:'above',l:'RSI above level'}]},
+      macd:{n:'MACD',c:'#4682ff',on:1,p:[{f:'fast',d:12,mn:2,mx:50},{f:'slow',d:26,mn:3,mx:100},{f:'signal',d:9,mn:2,mx:50}],
+        br:[{v:'hist_pos',l:'Histogram positive'},{v:'crossover',l:'MACD crosses above Signal'},{v:'hist_grow',l:'Histogram growing'}],
+        sr:[{v:'hist_neg',l:'Histogram negative'},{v:'crossunder',l:'MACD crosses below Signal'},{v:'hist_shrink',l:'Histogram shrinking'}]},
+      stoch:{n:'Stochastic',c:'#ff6b9d',on:0,p:[{f:'k_period',d:14,mn:2,mx:100},{f:'d_period',d:3,mn:2,mx:50}],
+        br:[{v:'kd_cross_up',l:'%K crosses above %D'},{v:'cross_above',l:'%K above level'},{v:'below',l:'Below level'}],
+        sr:[{v:'kd_cross_down',l:'%K crosses below %D'},{v:'cross_below',l:'%K below level'},{v:'above',l:'Above level'}]},
+      vwap:{n:'VWAP',c:'#00bcd4',on:0,p:[],
+        br:[{v:'cross_above',l:'Price crosses above VWAP'},{v:'below',l:'Price below VWAP'}],
+        sr:[{v:'cross_below',l:'Price crosses below VWAP'},{v:'above',l:'Price above VWAP'}]},
+      sar:{n:'Parabolic SAR',c:'#ff6b9d',on:0,p:[{f:'start_af',d:0.02,mn:0.01,mx:0.5},{f:'max_af',d:0.2,mn:0.1,mx:0.5}],
+        br:[{v:'flip_below',l:'SAR flips below price'},{v:'above_sar',l:'Price above SAR'}],
+        sr:[{v:'flip_above',l:'SAR flips above price'},{v:'below_sar',l:'Price below SAR'}]},
+      cmf:{n:'CMF',c:'#8bc34a',on:0,p:[{f:'period',d:20,mn:2,mx:100}],
+        br:[{v:'cross_above',l:'CMF crosses above level'},{v:'cross_zero_up',l:'CMF crosses above zero'}],
+        sr:[{v:'cross_below',l:'CMF crosses below level'},{v:'cross_zero_down',l:'CMF crosses below zero'}]},
+      vol:{n:'Volume',c:'#888',on:1,p:[],
+        br:[{v:'above_avg',l:'Volume above average'},{v:'spike',l:'Volume spike 2x'}],
+        sr:[{v:'below_avg',l:'Volume below average'},{v:'drying',l:'Volume drying up'}]},
+      trend:{n:'Trendlines',c:'#ff9800',on:0,p:[{f:'lookback',d:50,mn:10,mx:200}],
+        br:[{v:'support_bounce',l:'Bounce off support line'},{v:'break_resistance',l:'Break above resistance'}],
+        sr:[{v:'resistance_bounce',l:'Bounce off resistance'},{v:'break_support',l:'Break below support'}]},
+      pivot:{n:'Pivot Points',c:'#9c27b0',on:0,p:[],
+        br:[{v:'above_pivot',l:'Price above Pivot'},{v:'above_r1',l:'Price above R1'},{v:'above_r2',l:'Price above R2'}],
+        sr:[{v:'below_pivot',l:'Price below Pivot'},{v:'below_s1',l:'Price below S1'},{v:'below_s2',l:'Price below S2'}]},
+      donchian:{n:'Donchian',c:'#00bcd4',on:0,p:[{f:'period',d:20,mn:5,mx:100}],
+        br:[{v:'break_upper',l:'Break upper channel'},{v:'bounce_lower',l:'Bounce lower channel'}],
+        sr:[{v:'break_lower',l:'Break lower channel'},{v:'bounce_upper',l:'Bounce upper channel'}]},
+      keltner:{n:'Keltner',c:'#8bc34a',on:0,p:[{f:'period',d:20,mn:5,mx:100},{f:'multiplier',d:2,mn:0.5,mx:5}],
+        br:[{v:'bounce_lower',l:'Bounce lower band'},{v:'break_upper',l:'Break upper band'}],
+        sr:[{v:'bounce_upper',l:'Bounce upper band'},{v:'break_lower',l:'Break lower band'}]},
+      elder:{n:'Elder-Ray',c:'#ff6b9d',on:0,p:[{f:'period',d:13,mn:2,mx:50}],
+        br:[{v:'bulls_pos',l:'Bulls Power positive'},{v:'bulls_grow',l:'Bulls Power growing'}],
+        sr:[{v:'bears_neg',l:'Bears Power negative'},{v:'bears_grow',l:'Bears growing negative'}]},
+      dmi:{n:'DMI/ADX',c:'#e8c547',on:0,p:[{f:'period',d:14,mn:5,mx:50}],
+        br:[{v:'plus_di_above',l:'+DI above -DI'},{v:'adx_strong',l:'ADX above 20'}],
+        sr:[{v:'minus_di_above',l:'-DI above +DI'},{v:'adx_strong',l:'ADX above 20'}]},
+      pa:{n:'Price Action',c:'#ff9f43',on:0,p:[{f:'lookback',d:5,mn:2,mx:20}],
+        br:[{v:'hammer',l:'Hammer pattern'},{v:'morning_star',l:'Morning Star'},{v:'bullish_engulf',l:'Bullish Engulfing'}],
+        sr:[{v:'shooting_star',l:'Shooting Star'},{v:'evening_star',l:'Evening Star'},{v:'bearish_engulf',l:'Bearish Engulfing'}]}
+    };
 
-    c.innerHTML=
-      '<div class="card"><h3>API Config (Bitget) <span id="cfgSaveBadge" style="font-size:10px;color:var(--a);opacity:0.3;margin-left:8px">Auto-saved</span></h3>'+
-        '<div class="row"><div class="col"><label>API Key</label><input id="cfgApiKey" class="input" type="text" value="'+(cfg.api_key||'')+'"></div></div>'+
-        '<div class="row"><div class="col"><label>API Secret</label><input id="cfgApiSecret" class="input" type="text" value="'+(cfg.api_secret||'')+'"></div></div>'+
-        '<div class="row"><div class="col"><label>Passphrase</label><input id="cfgApiPass" class="input" type="text" value="'+(cfg.api_passphrase||'')+'"></div></div>'+
-      '</div>'+
-      '<div class="card"><h3>Trade Pair & Mode</h3>'+
-        '<div class="row">'+
-          '<div class="col"><label>Trade Mode</label><select id="cfgTradeMode" class="input"><option value="spot">Spot</option><option value="perpetual">Perpetual</option></select></div>'+
-          '<div class="col"><label>Pair</label><select id="cfgPair" class="input">'+pairOpts+'</select></div>'+
-        '</div>'+
-        '<div class="row" style="margin-top:8px">'+
-          '<div class="col"><label>Order Size (BTC)</label><input id="cfgOrderSize" class="input" type="number" step="0.0001" value="'+os+'"></div>'+
-          '<div class="col"><label>Take Profit %</label><input id="cfgTP" class="input" type="number" step="0.1" value="'+tp+'"></div>'+
-          '<div class="col"><label>Stop Loss %</label><input id="cfgSL" class="input" type="number" step="0.1" value="'+sl+'"></div>'+
-        '</div>'+
-        '<div class="row" style="margin-top:8px">'+
-          '<div class="col"><label>Account Type</label>'+
-            '<div style="display:flex;gap:16px;padding:8px 0">'+
-              '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--t1);font-size:13px"><input type="radio" name="balType" id="cfgBalDemo" value="demo"> DEMO</label>'+
-              '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--t1);font-size:13px"><input type="radio" name="balType" id="cfgBalReal" value="real"> REAL</label>'+
-            '</div>'+
-          '</div>'+
-        '</div>'+
-      '</div>'+
-      // MACD Bot Config (M1/M5)
-      '<div class="card" style="border-left:3px solid var(--a)"><h3 style="color:var(--a)">M1 MACD Bot</h3>'+
-        '<p style="color:var(--t3);font-size:10px;margin-bottom:12px">Current: <span id="cfgM1LiveVal">MACD='+(m1.macd||0).toFixed(6)+' RSI='+(m1.rsi||0).toFixed(1)+'</span></p>'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cfgM1MACDEn"'+(m1macdEn?' checked':'')+'></label><span style="font-size:12px">Enable MACD</span></div>'+
-        '<div class="row"><div class="col"><label>Fast</label><input id="cfgM1Fast" class="input" type="number" value="'+m1f+'" min="2" max="50"></div>'+
-        '<div class="col"><label>Slow</label><input id="cfgM1Slow" class="input" type="number" value="'+m1s+'" min="3" max="100"></div>'+
-        '<div class="col"><label>Signal</label><input id="cfgM1Sig" class="input" type="number" value="'+m1g+'" min="2" max="50"></div>'+
-        '<div class="col"><label>Source</label><select id="cfgM1Source" class="input"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cfgM1BBEn"'+(m1bbEn?' checked':'')+'></label><span style="font-size:12px">Enable Bollinger Bands</span></div>'+
-        '<div class="row"><div class="col"><label>Period</label><input id="cfgM1BBLen" class="input" type="number" value="'+m1bbL+'" min="2" max="100"></div>'+
-        '<div class="col"><label>Std Dev</label><input id="cfgM1BBStd" class="input" type="number" step="0.1" value="'+m1bbS+'" min="0.5" max="5"></div></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cfgM1RSIEn"'+(m1rsiEn?' checked':'')+'></label><span style="font-size:12px">Enable RSI</span></div>'+
-        '<div class="row"><div class="col"><label>Period</label><input id="cfgM1RSILen" class="input" type="number" value="'+m1rsiL+'" min="2" max="50"></div></div>'+
-      '</div>'+
-      '<div class="card" style="border-left:3px solid #ff9f43"><h3 style="color:#ff9f43">M5 MACD Bot</h3>'+
-        '<p style="color:var(--t3);font-size:10px;margin-bottom:12px">Current: <span id="cfgM5LiveVal">MACD='+(m5.macd||0).toFixed(6)+' RSI='+(m5.rsi||0).toFixed(1)+'</span></p>'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cfgM5MACDEn"'+(m5macdEn?' checked':'')+'></label><span style="font-size:12px">Enable MACD</span></div>'+
-        '<div class="row"><div class="col"><label>Fast</label><input id="cfgM5Fast" class="input" type="number" value="'+m5f+'" min="2" max="50"></div>'+
-        '<div class="col"><label>Slow</label><input id="cfgM5Slow" class="input" type="number" value="'+m5s+'" min="3" max="100"></div>'+
-        '<div class="col"><label>Signal</label><input id="cfgM5Sig" class="input" type="number" value="'+m5g+'" min="2" max="50"></div>'+
-        '<div class="col"><label>Source</label><select id="cfgM5Source" class="input"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cfgM5BBEn"'+(m5bbEn?' checked':'')+'></label><span style="font-size:12px">Enable Bollinger Bands</span></div>'+
-        '<div class="row"><div class="col"><label>Period</label><input id="cfgM5BBLen" class="input" type="number" value="'+m5bbL+'" min="2" max="100"></div>'+
-        '<div class="col"><label>Std Dev</label><input id="cfgM5BBStd" class="input" type="number" step="0.1" value="'+m5bbS+'" min="0.5" max="5"></div></div>'+
-        '<div style="display:flex;align-items:center;gap:8px;margin-top:12px;margin-bottom:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="cfgM5RSIEn"'+(m5rsiEn?' checked':'')+'></label><span style="font-size:12px">Enable RSI</span></div>'+
-        '<div class="row"><div class="col"><label>Period</label><input id="cfgM5RSILen" class="input" type="number" value="'+m5rsiL+'" min="2" max="50"></div></div>'+
-      '</div>'+
-      // ===== CHART INDICATORS STRATEGY CONFIG =====
-      '<div class="card" style="border-left:3px solid #00bcd4"><h3 style="color:#00bcd4">Chart Indicators Strategy</h3>'+
-        '<p style="color:var(--t3);font-size:10px;margin-bottom:12px">Konfigurasi indikator + Buy/Sell rules. Bot akan otomatis eksekusi berdasarkan rule ini saat indikator terpenuhi.</p>'+
-        // EMA
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndEMA"'+(dCi('ema',true)?' checked':'')+'> <span style="color:#ff9f43">EMA (Exponential Moving Average)</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Period</label><input id="cfgIndEMAPeriod" class="input" type="number" value="'+dCip('ema',20)+'" min="2" max="500"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndEMABuy" class="input"><option value="price_cross_above">Price crosses above EMA</option><option value="price_above">Price above EMA (trend up)</option><option value="ema_cross_up">EMA crosses above SMA</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndEMASell" class="input"><option value="price_cross_below">Price crosses below EMA</option><option value="price_below">Price below EMA (trend down)</option><option value="ema_cross_down">EMA crosses below SMA</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // SMA
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndSMA"'+(dCi('sma',false)?' checked':'')+'> <span style="color:#4682ff">SMA (Simple Moving Average)</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Period</label><input id="cfgIndSMAPeriod" class="input" type="number" value="'+dCip('sma',20)+'" min="2" max="500"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndSMABuy" class="input"><option value="price_cross_above">Price crosses above SMA</option><option value="price_above">Price above SMA</option><option value="sma_cross_up">SMA crosses above EMA</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndSMASell" class="input"><option value="price_cross_below">Price crosses below SMA</option><option value="price_below">Price below SMA</option><option value="sma_cross_down">SMA crosses below EMA</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // BB
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndBB"'+(dCi('bb',true)?' checked':'')+'> <span style="color:#aaa">Bollinger Bands</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Period</label><input id="cfgIndBBPeriod" class="input" type="number" value="'+dCip('bb',20)+'" min="2" max="200"></div>'+
-            '<div class="col"><label>Std Dev</label><input id="cfgIndBBStd" class="input" type="number" step="0.1" value="'+(ci.bb&&ci.bb.std!==undefined?ci.bb.std:2)+'" min="0.5" max="5"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndBBBuy" class="input"><option value="price_at_lower">Price touches Lower Band (bounce)</option><option value="price_below_lower">Price below Lower Band (breakout)</option><option value="squeeze_release">BB Squeeze release</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndBBSell" class="input"><option value="price_at_upper">Price touches Upper Band (bounce)</option><option value="price_above_upper">Price above Upper Band (breakout)</option><option value="price_cross_mid_down">Price crosses below Middle Band</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // RSI
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndRSI"'+(dCi('rsi',true)?' checked':'')+'> <span style="color:#e8c547">RSI (Relative Strength Index)</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Period</label><input id="cfgIndRSIPeriod" class="input" type="number" value="'+dCip('rsi',14)+'" min="2" max="100"></div>'+
-            '<div class="col"><label>Buy Below (Oversold)</label><input id="cfgIndRSIBuy" class="input" type="number" value="'+dCib('rsi',30)+'" min="1" max="50"></div>'+
-            '<div class="col"><label>Sell Above (Overbought)</label><input id="cfgIndRSISell" class="input" type="number" value="'+dCis('rsi',70)+'" min="50" max="99"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndRSIBuyRule" class="input"><option value="cross_below">RSI crosses below level (enter oversold)</option><option value="cross_above">RSI crosses above level (exit oversold)</option><option value="below">RSI below level (sustained)</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndRSISellRule" class="input"><option value="cross_above">RSI crosses above level (enter overbought)</option><option value="cross_below">RSI crosses below level (exit overbought)</option><option value="above">RSI above level (sustained)</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // MACD
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndMACD"'+(dCi('macd',true)?' checked':'')+'> <span style="color:#4682ff">MACD</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Fast</label><input id="cfgIndMACDFast" class="input" type="number" value="'+(ci.macd&&ci.macd.fast!==undefined?ci.macd.fast:12)+'" min="2" max="50"></div>'+
-            '<div class="col"><label>Slow</label><input id="cfgIndMACDSlow" class="input" type="number" value="'+(ci.macd&&ci.macd.slow!==undefined?ci.macd.slow:26)+'" min="3" max="100"></div>'+
-            '<div class="col"><label>Signal</label><input id="cfgIndMACDSig" class="input" type="number" value="'+(ci.macd&&ci.macd.signal!==undefined?ci.macd.signal:9)+'" min="2" max="50"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndMACDBuy" class="input"><option value="histogram_positive">Histogram turns positive</option><option value="crossover">MACD crosses above Signal</option><option value="histogram_growing">Histogram growing (momentum)</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndMACDSell" class="input"><option value="histogram_negative">Histogram turns negative</option><option value="crossunder">MACD crosses below Signal</option><option value="histogram_shrinking">Histogram shrinking (momentum)</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // Stochastic
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndStoch"'+(dCi('stoch',false)?' checked':'')+'> <span style="color:#ff6b9d">Stochastic Oscillator</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>%K Period</label><input id="cfgIndStochK" class="input" type="number" value="'+(ci.stoch&&ci.stoch.k_period!==undefined?ci.stoch.k_period:14)+'" min="2" max="100"></div>'+
-            '<div class="col"><label>%D Period</label><input id="cfgIndStochD" class="input" type="number" value="'+(ci.stoch&&ci.stoch.d_period!==undefined?ci.stoch.d_period:3)+'" min="2" max="50"></div>'+
-            '<div class="col"><label>Buy Below</label><input id="cfgIndStochBuy" class="input" type="number" value="'+dCib('stoch',20)+'" min="1" max="50"></div>'+
-            '<div class="col"><label>Sell Above</label><input id="cfgIndStochSell" class="input" type="number" value="'+dCis('stoch',80)+'" min="50" max="99"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndStochBuyRule" class="input"><option value="cross_above_buy">%K crosses above level</option><option value="kd_cross_up">%K crosses above %D</option><option value="below">Stoch below level</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndStochSellRule" class="input"><option value="cross_below_sell">%K crosses below level</option><option value="kd_cross_down">%K crosses below %D</option><option value="above">Stoch above level</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // VWAP
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndVWAP"'+(dCi('vwap',false)?' checked':'')+'> <span style="color:#00bcd4">VWAP (Volume Weighted Average Price)</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndVWAPBuy" class="input"><option value="price_cross_above">Price crosses above VWAP</option><option value="price_below">Price below VWAP (undervalue)</option><option value="price_above">Price above VWAP (trend up)</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndVWAPSell" class="input"><option value="price_cross_below">Price crosses below VWAP</option><option value="price_above_sell">Price above VWAP (overvalue)</option><option value="price_below_sell">Price below VWAP (trend down)</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // SAR
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndSAR"'+(dCi('sar',false)?' checked':'')+'> <span style="color:#ff6b9d">Parabolic SAR</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Start AF</label><input id="cfgIndSARStart" class="input" type="number" step="0.01" value="'+(ci.sar&&ci.sar.start_af!==undefined?ci.sar.start_af:0.02)+'" min="0.01" max="0.5"></div>'+
-            '<div class="col"><label>Max AF</label><input id="cfgIndSARMax" class="input" type="number" step="0.01" value="'+(ci.sar&&ci.sar.max_af!==undefined?ci.sar.max_af:0.2)+'" min="0.1" max="0.5"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndSARBuy" class="input"><option value="flip_below">SAR flips below price (bullish)</option><option value="price_above_sar">Price above SAR (sustained)</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndSARSell" class="input"><option value="flip_above">SAR flips above price (bearish)</option><option value="price_below_sar">Price below SAR (sustained)</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // CMF
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndCMF"'+(dCi('cmf',false)?' checked':'')+'> <span style="color:#8bc34a">CMF (Chaikin Money Flow)</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Period</label><input id="cfgIndCMFPeriod" class="input" type="number" value="'+dCip('cmf',20)+'" min="2" max="100"></div>'+
-            '<div class="col"><label>Buy Above (money in)</label><input id="cfgIndCMFBuy" class="input" type="number" step="0.01" value="'+(ci.cmf&&ci.cmf.buy_above!==undefined?ci.cmf.buy_above:0.1)+'" min="-1" max="1"></div>'+
-            '<div class="col"><label>Sell Below (money out)</label><input id="cfgIndCMFSell" class="input" type="number" step="0.01" value="'+(ci.cmf&&ci.cmf.sell_below!==undefined?ci.cmf.sell_below:-0.1)+'" min="-1" max="1"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndCMFBuyRule" class="input"><option value="cross_above">CMF crosses above level</option><option value="above">CMF above level (sustained)</option><option value="cross_zero_up">CMF crosses above zero</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndCMFSellRule" class="input"><option value="cross_below">CMF crosses below level</option><option value="below">CMF below level (sustained)</option><option value="cross_zero_down">CMF crosses below zero</option></select></div>'+
-          '</div>'+
-        '</div>'+
-        // Volume
-        '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndVol"'+(dCi('vol',true)?' checked':'')+'> <span>Volume</span></label>'+
-          '</div>'+
-          '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndVolBuy" class="input"><option value="vol_above_avg">Volume above average</option><option value="vol_spike">Volume spike (2x avg)</option><option value="vol_increasing">Volume increasing trend</option></select></div>'+
-            '<div class="col"><label>Sell Rule</label><select id="cfgIndVolSell" class="input"><option value="vol_below_avg">Volume below average</option><option value="vol_drying">Volume drying up</option><option value="vol_decreasing">Volume decreasing trend</option></select></div>'+
-          '</div>'+
-          '<p style="color:var(--t3);font-size:10px;margin-top:4px">Volume bar di bawah candlestick. Hijau = bullish, Merah = bearish.</p>'+
-        '</div>'+
-        // SIGNAL CONFIRMATION
-        '<div style="background:var(--s2);border:1px solid #e8c547;border-radius:6px;padding:10px;margin-bottom:8px">'+
-          '<h4 style="color:#e8c547;margin-bottom:8px">Signal Confirmation</h4>'+
-          '<div class="row">'+
-            '<div class="col"><label>Min indicators agree for BUY</label><input id="cfgMinBuyConfirm" class="input" type="number" value="'+(ci.min_buy_confirm||2)+'" min="1" max="10"></div>'+
-            '<div class="col"><label>Min indicators agree for SELL</label><input id="cfgMinSellConfirm" class="input" type="number" value="'+(ci.min_sell_confirm||2)+'" min="1" max="10"></div>'+
-          '</div>'+
-          '<p style="color:var(--t3);font-size:10px;margin-top:4px">Bot hanya eksekusi BUY/SELL jika minimal N indikator setuju. Contoh: Jika 3 indikator aktif dan Min=2, minimal 2 dari 3 harus setuju.</p>'+
-        '</div>'+
-      '</div>'+
-// Buttons
-      '<div style="display:flex;gap:8px;margin:12px 0">'+
-        '<button class="btn btn-start" id="btnSyncM5">Sync M5 = M1</button>'+
-        '<button class="btn btn-start" id="btnApplyAll" style="flex:1;font-size:14px;padding:12px">APPLY ALL CONFIG</button>'+
-        '<button class="btn btn-stop" id="btnResetCfg">Reset Default</button>'+
-      '</div>'+
-      '<div class="card"><h3>System Info</h3><div class="row">'+
-        '<div class="col"><h4>Version</h4><div class="v">BG-BOT v5</div></div>'+
-        '<div class="col"><h4>Engine</h4><div class="v">pandas_ta</div></div>'+
-        '<div class="col"><h4>Data Source</h4><div class="v">Bitget OHLC</div></div>'+
-        '<div class="col"><h4>Exchange</h4><div class="v">Bitget</div></div>'+
-      '</div></div>';
+    var indH='';
+    Object.keys(D).forEach(function(k){
+      var d=D[k];var on=ci[k]!==undefined?isOn(ci[k]):d.on;var ph='';
+      if(d.p.length>0){ph='<div style="display:flex;gap:4px;margin-top:4px">'+d.p.map(function(pr){return _pf(ci,k,pr.f,pr.d,pr.mn,pr.mx);}).join('')+'</div>';}
+      indH+=_ic(k,d.n,d.c,on,ph);
+    });
+    var buyH='';var sellH='';
+    Object.keys(D).forEach(function(k){
+      var d=D[k];
+      var bo=d.br.map(function(r){return _o(r.v,r.l,ci[k]&&ci[k].buy_rule===r.v);}).join('');
+      buyH+=_sr(k,d.n,d.c,'Buy',ci[k]&&ci[k].buy_enabled,bo);
+      var so=d.sr.map(function(r){return _o(r.v,r.l,ci[k]&&ci[k].sell_rule===r.v);}).join('');
+      sellH+=_sr(k,d.n,d.c,'Sell',ci[k]&&ci[k].sell_enabled,so);
+    });
 
-    // Set select values
+    var h='';
+    h+='<div class="card"><h3>API Config (Bitget) <span id="cfgSaveBadge" style="font-size:10px;color:var(--a);opacity:0.3;margin-left:8px">Auto-saved</span></h3>'+
+      '<div class="row"><div class="col"><label>API Key</label><input id="cfgApiKey" class="input" type="text" value="'+(cfg.api_key||"")+'"></div></div>'+
+      '<div class="row"><div class="col"><label>API Secret</label><input id="cfgApiSecret" class="input" type="text" value="'+(cfg.api_secret||"")+'"></div></div>'+
+      '<div class="row"><div class="col"><label>Passphrase</label><input id="cfgApiPass" class="input" type="text" value="'+(cfg.api_passphrase||"")+'"></div></div></div>';
+    h+='<div class="card"><h3>Trade Config</h3>'+
+      '<div class="row"><div class="col"><label>Mode</label><select id="cfgTradeMode" class="input"><option value="spot">Spot</option><option value="perpetual">Perpetual</option></select></div>'+
+      '<div class="col"><label>Pair</label><select id="cfgPair" class="input">'+pairOpts+'</select></div>'+
+      '<div class="col"><label>Account</label><div style="display:flex;gap:12px;padding:8px 0">'+
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="balType" id="cfgBalDemo" value="demo"> DEMO</label>'+
+      '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="balType" id="cfgBalReal" value="real"> REAL</label></div></div></div>'+
+      '<div class="row" style="margin-top:8px"><div class="col"><label>Order Size</label><input id="cfgOrderSize" class="input" type="number" step="0.0001" value="'+os+'"></div>'+
+      '<div class="col"><label>TP %</label><input id="cfgTP" class="input" type="number" step="0.1" value="'+tp+'"></div>'+
+      '<div class="col"><label>SL %</label><input id="cfgSL" class="input" type="number" step="0.1" value="'+sl+'"></div></div></div>';
+    h+='<div class="card"><h3>Dual Timeframe</h3>'+
+      '<p style="color:var(--t3);font-size:10px;margin-bottom:12px">Aktifkan M1 dan/atau M5. Indikator shared - parameter berlaku untuk kedua TF.</p>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'+
+      '<div style="background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:12px;border-left:3px solid var(--a)">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="checkbox" id="cfgM1Enabled"'+(m1En?" checked":"")+">"+'<span style="font-weight:bold;color:var(--a)">M1 (1min)</span>'+
+      '<span id="cfgM1Status" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(42,42,42,0.5)">'+(m1En?"ACTIVE":"OFF")+'</span></div>'+
+      '<select id="cfgM1Source" class="input" style="width:80px"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div>'+
+      '<div style="background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:12px;border-left:3px solid #ff9f43">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><input type="checkbox" id="cfgM5Enabled"'+(m5En?" checked":"")+">"+'<span style="font-weight:bold;color:#ff9f43">M5 (5min)</span>'+
+      '<span id="cfgM5Status" style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(42,42,42,0.5)">'+(m5En?"ACTIVE":"OFF")+'</span></div>'+
+      '<select id="cfgM5Source" class="input" style="width:80px"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div></div>'+
+      '<button class="btn" id="btnSyncM5" style="margin-top:8px">Sync M5 = M1</button></div>';
+    h+='<div class="card"><h3>Indicator Parameters</h3><p style="color:var(--t3);font-size:10px;margin-bottom:8px">17 indikator. Shared untuk M1/M5.</p>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+indH+'</div></div>';
+    h+='<div class="card" style="border-left:3px solid var(--a)"><h3 style="color:var(--a)">BUY STRATEGY</h3>'+
+      '<p style="color:var(--t3);font-size:10px;margin-bottom:8px">Pilih indikator dan rule untuk ENTRY BUY.</p>'+
+      '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--b);font-size:10px;color:var(--t3)"><span></span><span>INDICATOR</span><span>BUY RULE</span></div>'+
+      buyH+
+      '<div style="margin-top:10px;display:flex;align-items:center;gap:8px"><span style="font-weight:bold">Min agree:</span>'+
+      '<input id="cfgMinBuyConfirm" class="input" type="number" value="'+(ci.min_buy_confirm||2)+'" min="1" max="17" style="width:60px;margin:0">'+
+      '<span style="font-size:10px;color:var(--t3)">to BUY</span></div></div>';
+    h+='<div class="card" style="border-left:3px solid var(--r)"><h3 style="color:var(--r)">SELL STRATEGY</h3>'+
+      '<p style="color:var(--t3);font-size:10px;margin-bottom:8px">Pilih indikator dan rule untuk EXIT SELL.</p>'+
+      '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--b);font-size:10px;color:var(--t3)"><span></span><span>INDICATOR</span><span>SELL RULE</span></div>'+
+      sellH+
+      '<div style="margin-top:10px;display:flex;align-items:center;gap:8px"><span style="font-weight:bold">Min agree:</span>'+
+      '<input id="cfgMinSellConfirm" class="input" type="number" value="'+(ci.min_sell_confirm||2)+'" min="1" max="17" style="width:60px;margin:0">'+
+      '<span style="font-size:10px;color:var(--t3)">to SELL</span></div></div>';
+    h+='<div style="display:flex;gap:8px;margin:12px 0"><button class="btn btn-start" id="btnApplyAll" style="flex:1;font-size:14px;padding:12px">APPLY ALL CONFIG</button>'+
+      '<button class="btn btn-stop" id="btnResetCfg">Reset</button></div>';
+    h+='<div class="card"><h3>System Info</h3><div class="row">'+
+      '<div class="col"><h4>Version</h4><div class="v">BG-BOT v5</div></div>'+
+      '<div class="col"><h4>Indicators</h4><div class="v">17 available</div></div>'+
+      '<div class="col"><h4>Dual TF</h4><div class="v" id="cfgDualTF">'+(m1En&&m5En?"M1+M5":m1En?"M1 only":m5En?"M5 only":"NONE")+'</div></div>'+
+      '<div class="col"><h4>Exchange</h4><div class="v">Bitget</div></div></div></div>';
+
+    c.innerHTML=h;
+
     document.getElementById('cfgTradeMode').value=tm;
-    document.getElementById('cfgM1Source').value=m1src;
-    document.getElementById('cfgM5Source').value=m5src;
+    document.getElementById('cfgM1Source').value=m1c.source||'close';
+    document.getElementById('cfgM5Source').value=m5c.source||'close';
     if(bt==='real')document.getElementById('cfgBalReal').checked=true;else document.getElementById('cfgBalDemo').checked=true;
 
-    // Trade mode change
     document.getElementById('cfgTradeMode').onchange=function(){
-      var mode=this.value;var pairs=mode==='perpetual'?futPairs:spotPairs;
-      var sel=document.getElementById('cfgPair');
-      sel.innerHTML=pairs.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
+      var pp=this.value==='perpetual'?futPairs:spotPairs;
+      document.getElementById('cfgPair').innerHTML=pp.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
     };
+    document.getElementById('cfgM1Enabled').onchange=function(){document.getElementById('cfgM1Status').textContent=this.checked?'ACTIVE':'OFF';updTF();};
+    document.getElementById('cfgM5Enabled').onchange=function(){document.getElementById('cfgM5Status').textContent=this.checked?'ACTIVE':'OFF';updTF();};
+    function updTF(){var m1=document.getElementById('cfgM1Enabled').checked;var m5=document.getElementById('cfgM5Enabled').checked;var el=document.getElementById('cfgDualTF');if(el)el.textContent=m1&&m5?'M1+M5':m1?'M1 only':m5?'M5 only':'NONE';}
+    document.getElementById('btnSyncM5').onclick=function(){document.getElementById('cfgM5Source').value=document.getElementById('cfgM1Source').value;alert('M5 synced');};
+    document.getElementById('btnApplyAll').onclick=function(){api('POST','/api/config-public',_cfgBuild()).then(function(){alert('Saved');renderConfig(document.getElementById('content'));}).catch(function(e){alert('Error: '+e.message);});};
+    document.getElementById('btnResetCfg').onclick=function(){if(!confirm('Reset all?'))return;api('POST','/api/config-public',{pair:'BTCUSDT',mode:'spot',balance_type:'demo',order_size:0.001,tp_percent:0.6,sl_percent:0.3,m1_enabled:true,m5_enabled:false}).then(function(){renderConfig(document.getElementById('content'));});};
 
-    // Sync M5 = M1
-    document.getElementById('btnSyncM5').onclick=function(){
-      ['Fast','Slow','Sig','Source','BBLen','BBStd','RSILen'].forEach(function(k){
-        var src=document.getElementById('cfgM1'+k);var dst=document.getElementById('cfgM5'+k);
-        if(src&&dst)dst.value=src.value;
+    function _cfgBuild(){
+      var ciP={};var keys=Object.keys(D);
+      keys.forEach(function(k){
+        var el=document.getElementById('cfgInd'+k.toUpperCase());
+        ciP[k]={enabled:el?el.checked:false};
+        D[k].p.forEach(function(pr){var inp=document.getElementById('cfgInd'+k.toUpperCase()+'_'+pr.f.toUpperCase());if(inp)ciP[k][pr.f]=parseFloat(inp.value)||0;});
+        var be=document.getElementById('cfgBuy_'+k);if(be)ciP[k].buy_enabled=be.checked;
+        var se=document.getElementById('cfgSell_'+k);if(se)ciP[k].sell_enabled=se.checked;
+        var br=document.getElementById('cfgBuyRule_'+k);if(br)ciP[k].buy_rule=br.value;
+        var sr=document.getElementById('cfgSellRule_'+k);if(sr)ciP[k].sell_rule=sr.value;
       });
-      ['MACDEn','BBEn','RSIEn'].forEach(function(k){
-        var src=document.getElementById('cfgM1'+k);var dst=document.getElementById('cfgM5'+k);
-        if(src&&dst)dst.checked=src.checked;
-      });
-      alert('M5 synced to M1');
-    };
-
-    // Reset
-    document.getElementById('btnResetCfg').onclick=function(){
-      ['cfgM1Fast','cfgM5Fast'].forEach(function(id){document.getElementById(id).value=4;});
-      ['cfgM1Slow','cfgM5Slow'].forEach(function(id){document.getElementById(id).value=5;});
-      ['cfgM1Sig','cfgM5Sig'].forEach(function(id){document.getElementById(id).value=3;});
-      ['cfgM1Source','cfgM5Source'].forEach(function(id){document.getElementById(id).value='close';});
-      ['cfgM1BBLen','cfgM5BBLen'].forEach(function(id){document.getElementById(id).value=6;});
-      ['cfgM1BBStd','cfgM5BBStd'].forEach(function(id){document.getElementById(id).value=1.2;});
-      ['cfgM1RSILen','cfgM5RSILen'].forEach(function(id){document.getElementById(id).value=6;});
-      ['cfgM1MACDEn','cfgM1BBEn','cfgM1RSIEn','cfgM5MACDEn','cfgM5BBEn','cfgM5RSIEn'].forEach(function(id){document.getElementById(id).checked=true;});
-      document.getElementById('cfgTradeMode').value='spot';
-      document.getElementById('cfgBalDemo').checked=true;
-      document.getElementById('cfgOrderSize').value=0.001;
-      document.getElementById('cfgTP').value=0.6;
-      document.getElementById('cfgSL').value=0.3;
-      // Reset chart indicators
-      document.getElementById('cfgIndEMA').checked=true;document.getElementById('cfgIndEMAPeriod').value=20;
-      document.getElementById('cfgIndSMA').checked=false;document.getElementById('cfgIndSMAPeriod').value=20;
-      document.getElementById('cfgIndBB').checked=true;document.getElementById('cfgIndBBPeriod').value=20;document.getElementById('cfgIndBBStd').value=2;
-      document.getElementById('cfgIndRSI').checked=true;document.getElementById('cfgIndRSIPeriod').value=14;document.getElementById('cfgIndRSIBuy').value=30;document.getElementById('cfgIndRSISell').value=70;
-      document.getElementById('cfgIndMACD').checked=true;document.getElementById('cfgIndMACDFast').value=12;document.getElementById('cfgIndMACDSlow').value=26;document.getElementById('cfgIndMACDSig').value=9;
-      document.getElementById('cfgIndStoch').checked=false;document.getElementById('cfgIndStochK').value=14;document.getElementById('cfgIndStochD').value=3;
-      document.getElementById('cfgIndVWAP').checked=false;
-      document.getElementById('cfgIndSAR').checked=false;
-      document.getElementById('cfgIndCMF').checked=false;document.getElementById('cfgIndCMFPeriod').value=20;
-      document.getElementById('cfgIndVol').checked=true;
-      alert('Reset to default');
-    };
-
-    // APPLY ALL
-    document.getElementById('btnApplyAll').onclick=function(){
-      var full=_cfgBuildPayload();
-      if(full.m1.fast>=full.m1.slow){alert('M1: Fast must be less than Slow');return;}
-      if(full.m5.fast>=full.m5.slow){alert('M5: Fast must be less than Slow');return;}
-      api('POST','/api/config-public',full).then(function(r){alert('All Config Saved');renderConfig(document.getElementById('content'));}).catch(function(e){alert('Error: '+e.message);});
-    };
-
-    // Build config payload
-    function _cfgBuildPayload(){
-      return {
-        api_key:document.getElementById('cfgApiKey').value,
-        api_secret:document.getElementById('cfgApiSecret').value,
-        api_passphrase:document.getElementById('cfgApiPass').value,
-        pair:document.getElementById('cfgPair').value,
-        mode:document.getElementById('cfgTradeMode').value,
+      ciP.min_buy_confirm=parseInt(document.getElementById('cfgMinBuyConfirm').value)||2;
+      ciP.min_sell_confirm=parseInt(document.getElementById('cfgMinSellConfirm').value)||2;
+      return {api_key:document.getElementById('cfgApiKey').value,api_secret:document.getElementById('cfgApiSecret').value,api_passphrase:document.getElementById('cfgApiPass').value,
+        pair:document.getElementById('cfgPair').value,mode:document.getElementById('cfgTradeMode').value,
         balance_type:document.getElementById('cfgBalReal').checked?'real':'demo',
         order_size:parseFloat(document.getElementById('cfgOrderSize').value)||0.001,
         tp_percent:parseFloat(document.getElementById('cfgTP').value)||0.6,
         sl_percent:parseFloat(document.getElementById('cfgSL').value)||0.3,
-        m1:{fast:parseInt(document.getElementById('cfgM1Fast').value)||4,slow:parseInt(document.getElementById('cfgM1Slow').value)||5,signal:parseInt(document.getElementById('cfgM1Sig').value)||3,source:document.getElementById('cfgM1Source').value},
-        m5:{fast:parseInt(document.getElementById('cfgM5Fast').value)||4,slow:parseInt(document.getElementById('cfgM5Slow').value)||5,signal:parseInt(document.getElementById('cfgM5Sig').value)||3,source:document.getElementById('cfgM5Source').value},
-        m1_bb_length:parseInt(document.getElementById('cfgM1BBLen').value)||6,
-        m1_bb_std:parseFloat(document.getElementById('cfgM1BBStd').value)||1.2,
-        m1_rsi_length:parseInt(document.getElementById('cfgM1RSILen').value)||6,
-        m1_bb_enabled:document.getElementById('cfgM1BBEn').checked,
-        m1_macd_enabled:document.getElementById('cfgM1MACDEn').checked,
-        m1_rsi_enabled:document.getElementById('cfgM1RSIEn').checked,
-        m5_bb_length:parseInt(document.getElementById('cfgM5BBLen').value)||6,
-        m5_bb_std:parseFloat(document.getElementById('cfgM5BBStd').value)||1.2,
-        m5_rsi_length:parseInt(document.getElementById('cfgM5RSILen').value)||6,
-        m5_bb_enabled:document.getElementById('cfgM5BBEn').checked,
-        m5_macd_enabled:document.getElementById('cfgM5MACDEn').checked,
-        m5_rsi_enabled:document.getElementById('cfgM5RSIEn').checked,
-        chart_indicators:{
-          ema:{enabled:document.getElementById('cfgIndEMA').checked,period:parseInt(document.getElementById('cfgIndEMAPeriod').value)||20,buy_rule:document.getElementById('cfgIndEMABuy').value,sell_rule:document.getElementById('cfgIndEMASell').value},
-          sma:{enabled:document.getElementById('cfgIndSMA').checked,period:parseInt(document.getElementById('cfgIndSMAPeriod').value)||20,buy_rule:document.getElementById('cfgIndSMABuy').value,sell_rule:document.getElementById('cfgIndSMASell').value},
-          bb:{enabled:document.getElementById('cfgIndBB').checked,period:parseInt(document.getElementById('cfgIndBBPeriod').value)||20,std:parseFloat(document.getElementById('cfgIndBBStd').value)||2,buy_rule:document.getElementById('cfgIndBBBuy').value,sell_rule:document.getElementById('cfgIndBBSell').value},
-          rsi:{enabled:document.getElementById('cfgIndRSI').checked,period:parseInt(document.getElementById('cfgIndRSIPeriod').value)||14,buy_below:parseInt(document.getElementById('cfgIndRSIBuy').value)||30,sell_above:parseInt(document.getElementById('cfgIndRSISell').value)||70,buy_rule:document.getElementById('cfgIndRSIBuyRule').value,sell_rule:document.getElementById('cfgIndRSISellRule').value},
-          macd:{enabled:document.getElementById('cfgIndMACD').checked,fast:parseInt(document.getElementById('cfgIndMACDFast').value)||12,slow:parseInt(document.getElementById('cfgIndMACDSlow').value)||26,signal:parseInt(document.getElementById('cfgIndMACDSig').value)||9,buy_rule:document.getElementById('cfgIndMACDBuy').value,sell_rule:document.getElementById('cfgIndMACDSell').value},
-          stoch:{enabled:document.getElementById('cfgIndStoch').checked,k_period:parseInt(document.getElementById('cfgIndStochK').value)||14,d_period:parseInt(document.getElementById('cfgIndStochD').value)||3,buy_below:parseInt(document.getElementById('cfgIndStochBuy').value)||20,sell_above:parseInt(document.getElementById('cfgIndStochSell').value)||80,buy_rule:document.getElementById('cfgIndStochBuyRule').value,sell_rule:document.getElementById('cfgIndStochSellRule').value},
-          vwap:{enabled:document.getElementById('cfgIndVWAP').checked,buy_rule:document.getElementById('cfgIndVWAPBuy').value,sell_rule:document.getElementById('cfgIndVWAPSell').value},
-          sar:{enabled:document.getElementById('cfgIndSAR').checked,start_af:parseFloat(document.getElementById('cfgIndSARStart').value)||0.02,max_af:parseFloat(document.getElementById('cfgIndSARMax').value)||0.2,buy_rule:document.getElementById('cfgIndSARBuy').value,sell_rule:document.getElementById('cfgIndSARSell').value},
-          cmf:{enabled:document.getElementById('cfgIndCMF').checked,period:parseInt(document.getElementById('cfgIndCMFPeriod').value)||20,buy_above:parseFloat(document.getElementById('cfgIndCMFBuy').value)||0.1,sell_below:parseFloat(document.getElementById('cfgIndCMFSell').value)||-0.1,buy_rule:document.getElementById('cfgIndCMFBuyRule').value,sell_rule:document.getElementById('cfgIndCMFSellRule').value},
-          vol:{enabled:document.getElementById('cfgIndVol').checked,buy_rule:document.getElementById('cfgIndVolBuy').value,sell_rule:document.getElementById('cfgIndVolSell').value},
-          min_buy_confirm:parseInt(document.getElementById('cfgMinBuyConfirm').value)||2,
-          min_sell_confirm:parseInt(document.getElementById('cfgMinSellConfirm').value)||2
-        }
-      };
+        m1_enabled:document.getElementById('cfgM1Enabled').checked,m5_enabled:document.getElementById('cfgM5Enabled').checked,
+        m1:{fast:4,slow:5,signal:3,source:document.getElementById('cfgM1Source').value},
+        m5:{fast:4,slow:5,signal:3,source:document.getElementById('cfgM5Source').value},
+        chart_indicators:ciP};
     }
 
-    // Auto-save
-    var _cfgAutoSaveTimer=null;
-    function cfgAutoSave(){
-      if(_cfgAutoSaveTimer)clearTimeout(_cfgAutoSaveTimer);
-      _cfgAutoSaveTimer=setTimeout(function(){
-        var full=_cfgBuildPayload();
-        api('POST','/api/config-public',full).then(function(){
-          var badge=document.getElementById('cfgSaveBadge');
-          if(badge){badge.textContent='Saved';badge.style.color='var(--a)';badge.style.opacity='1';setTimeout(function(){badge.style.opacity='0.3';badge.textContent='Auto-saved';},1500);}
-        }).catch(function(){});
-      },800);
-    }
-
-    // Bind auto-save to all inputs
-    var allInputs=c.querySelectorAll('input,select');
-    allInputs.forEach(function(el){
-      el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'?'change':'input',cfgAutoSave,false);
-    });
-
-    // Live status polling
-    if(window._cfgStatusInt)clearInterval(window._cfgStatusInt);
-    window._cfgStatusInt=setInterval(function(){
-      api('GET','/api/market/live').then(function(d){
-        if(!d||!d.m1)return;
-        var e;e=document.getElementById('cfgM1LiveVal');if(e)e.textContent='MACD='+(d.m1.macd||0).toFixed(6)+' RSI='+(d.m1.rsi||0).toFixed(1)+' Signal='+(d.m1.signal||'-');
-        e=document.getElementById('cfgM5LiveVal');if(e)e.textContent='MACD='+(d.m5.macd||0).toFixed(6)+' RSI='+(d.m5.rsi||0).toFixed(1)+' Signal='+(d.m5.signal||'-');
-      }).catch(function(){});
-    },2000);
+    var _ast=null;
+    function autoSave(){if(_ast)clearTimeout(_ast);_ast=setTimeout(function(){api('POST','/api/config-public',_cfgBuild()).then(function(){var b=document.getElementById('cfgSaveBadge');if(b){b.textContent='Saved';b.style.opacity='1';setTimeout(function(){b.textContent='Auto-saved';b.style.opacity='0.3';},1500);}}).catch(function(){});},1000);}
+    c.querySelectorAll('input,select').forEach(function(el){el.addEventListener(el.type==='checkbox'||el.tagName==='SELECT'?'change':'input',autoSave,false);});
 
   }).catch(function(e){c.innerHTML='<div class="card" style="color:var(--r)">Error: '+e.message+'</div>';});
 }
-</script>
-</script></body></html>
+
+
+

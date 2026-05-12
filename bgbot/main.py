@@ -1580,7 +1580,7 @@ async def save_config_public(body: dict):
         _config_store["m1"] = body["m1"]
     if "m5" in body:
         _config_store["m5"] = body["m5"]
-    for k in ["order_size","tp_percent","sl_percent","mode","balance_type","pair","m1_bb_length","m1_bb_std","m1_rsi_length","m1_bb_enabled","m1_macd_enabled","m1_rsi_enabled","m5_bb_length","m5_bb_std","m5_rsi_length","m5_bb_enabled","m5_macd_enabled","m5_rsi_enabled"]:
+    for k in ["order_size","tp_percent","sl_percent","mode","balance_type","pair","m1_bb_length","m1_bb_std","m1_rsi_length","m1_bb_enabled","m1_macd_enabled","m1_rsi_enabled","m5_bb_length","m5_bb_std","m5_rsi_length","m5_bb_enabled","m5_macd_enabled","m5_rsi_enabled","m1_enabled","m5_enabled"]:
         if k in body:
             _config_store[k] = body[k]
     if "chart_indicators" in body:
