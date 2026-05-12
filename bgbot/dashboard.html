@@ -1197,14 +1197,26 @@ function renderMarket(c){
   if(window._mkt.pollTimer){clearInterval(window._mkt.pollTimer);window._mkt.pollTimer=null;}
 
   var h='';
-  // Top bar
-  h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">';
+  // Top bar with config info
+  h+='<div style="padding:8px 0">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
   h+='<div style="display:flex;gap:10px;align-items:center">';
   h+='<span id="mktPair" style="font-size:11px;color:var(--t3)">--</span>';
   h+='<span id="mktPrice" style="font-size:22px;font-weight:bold;color:var(--t1)">--</span>';
   h+='<span id="mktWsM1" class="mkt-ws-badge" style="background:#330000;color:#ff4444">M1: --</span>';
   h+='<span id="mktWsM5" class="mkt-ws-badge" style="background:#330000;color:#ff4444">M5: --</span></div>';
   h+='<span id="mktLastUpdate" style="font-size:10px;color:var(--t3)">--</span></div>';
+  // Config summary bar
+  h+='<div id="mktConfigBar" style="display:flex;gap:12px;flex-wrap:wrap;padding:6px 10px;background:var(--s2);border-radius:6px;border:1px solid var(--b);font-size:11px">';
+  h+='<span id="mktCfgMode" style="color:var(--t3)">Mode: --</span>';
+  h+='<span id="mktCfgAccount" style="color:var(--t3)">Account: --</span>';
+  h+='<span id="mktCfgM1Inds" style="color:#00d4aa">M1 Indicators: --</span>';
+  h+='<span id="mktCfgM5Inds" style="color:#ff9f43">M5 Indicators: --</span>';
+  h+='<span id="mktCfgM1Buy" style="color:var(--a)">M1 Buy: --</span>';
+  h+='<span id="mktCfgM1Sell" style="color:var(--r)">M1 Sell: --</span>';
+  h+='<span id="mktCfgM5Buy" style="color:var(--a)">M5 Buy: --</span>';
+  h+='<span id="mktCfgM5Sell" style="color:var(--r)">M5 Sell: --</span>';
+  h+='</div></div>';
 
   // TF Sub-tabs
   h+='<div style="display:flex;gap:0;margin-bottom:0;border-bottom:2px solid var(--b)">';
