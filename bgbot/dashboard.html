@@ -112,6 +112,32 @@ document.addEventListener("DOMContentLoaded", function() {
     };
   }
 
+  // NAV click handlers
+  function initNav() {
+    var navLinks = document.querySelectorAll('#nav a');
+    navLinks.forEach(function(a){
+      a.onclick = function(e){
+        e.preventDefault();
+        var tab = this.getAttribute('data-tab');
+        if(tab==='logout'){logout();return;}
+        navLinks.forEach(function(x){x.classList.remove('on');});
+        this.classList.add('on');
+        renderTab(tab);
+      };
+    });
+  }
+  initNav();
+
+  // Also re-init nav after showDash
+  var _origShowDash = window.showDash || showDash;
+  if(typeof showDash === 'function'){
+    var _sd = showDash;
+    showDash = function(){
+      _sd();
+      setTimeout(initNav, 100);
+    };
+  }
+
   // Check existing token
   if (T) {
     api('GET', '/auth/me').then(function(d) {
@@ -1539,16 +1565,18 @@ function _mktLoadIndicatorConfig(){
         m5_macd_enabled:document.getElementById('cfgM5MACDEn').checked,
         m5_rsi_enabled:document.getElementById('cfgM5RSIEn').checked,
         chart_indicators:{
-          ema:{enabled:document.getElementById('cfgIndEMA').checked,period:parseInt(document.getElementById('cfgIndEMAPeriod').value)||20},
-          sma:{enabled:document.getElementById('cfgIndSMA').checked,period:parseInt(document.getElementById('cfgIndSMAPeriod').value)||20},
-          bb:{enabled:document.getElementById('cfgIndBB').checked,period:parseInt(document.getElementById('cfgIndBBPeriod').value)||20,std:parseFloat(document.getElementById('cfgIndBBStd').value)||2},
-          rsi:{enabled:document.getElementById('cfgIndRSI').checked,period:parseInt(document.getElementById('cfgIndRSIPeriod').value)||14,buy_below:parseInt(document.getElementById('cfgIndRSIBuy').value)||30,sell_above:parseInt(document.getElementById('cfgIndRSISell').value)||70},
-          macd:{enabled:document.getElementById('cfgIndMACD').checked,fast:parseInt(document.getElementById('cfgIndMACDFast').value)||12,slow:parseInt(document.getElementById('cfgIndMACDSlow').value)||26,signal:parseInt(document.getElementById('cfgIndMACDSig').value)||9},
-          stoch:{enabled:document.getElementById('cfgIndStoch').checked,k_period:parseInt(document.getElementById('cfgIndStochK').value)||14,d_period:parseInt(document.getElementById('cfgIndStochD').value)||3,buy_below:parseInt(document.getElementById('cfgIndStochBuy').value)||20,sell_above:parseInt(document.getElementById('cfgIndStochSell').value)||80},
-          vwap:{enabled:document.getElementById('cfgIndVWAP').checked},
-          sar:{enabled:document.getElementById('cfgIndSAR').checked,start_af:parseFloat(document.getElementById('cfgIndSARStart').value)||0.02,max_af:parseFloat(document.getElementById('cfgIndSARMax').value)||0.2},
-          cmf:{enabled:document.getElementById('cfgIndCMF').checked,period:parseInt(document.getElementById('cfgIndCMFPeriod').value)||20,buy_above:parseFloat(document.getElementById('cfgIndCMFBuy').value)||0.1,sell_below:parseFloat(document.getElementById('cfgIndCMFSell').value)||-0.1},
-          vol:{enabled:document.getElementById('cfgIndVol').checked}
+          ema:{enabled:document.getElementById('cfgIndEMA').checked,period:parseInt(document.getElementById('cfgIndEMAPeriod').value)||20,buy_rule:document.getElementById('cfgIndEMABuy').value,sell_rule:document.getElementById('cfgIndEMASell').value},
+          sma:{enabled:document.getElementById('cfgIndSMA').checked,period:parseInt(document.getElementById('cfgIndSMAPeriod').value)||20,buy_rule:document.getElementById('cfgIndSMABuy').value,sell_rule:document.getElementById('cfgIndSMASell').value},
+          bb:{enabled:document.getElementById('cfgIndBB').checked,period:parseInt(document.getElementById('cfgIndBBPeriod').value)||20,std:parseFloat(document.getElementById('cfgIndBBStd').value)||2,buy_rule:document.getElementById('cfgIndBBBuy').value,sell_rule:document.getElementById('cfgIndBBSell').value},
+          rsi:{enabled:document.getElementById('cfgIndRSI').checked,period:parseInt(document.getElementById('cfgIndRSIPeriod').value)||14,buy_below:parseInt(document.getElementById('cfgIndRSIBuy').value)||30,sell_above:parseInt(document.getElementById('cfgIndRSISell').value)||70,buy_rule:document.getElementById('cfgIndRSIBuyRule').value,sell_rule:document.getElementById('cfgIndRSISellRule').value},
+          macd:{enabled:document.getElementById('cfgIndMACD').checked,fast:parseInt(document.getElementById('cfgIndMACDFast').value)||12,slow:parseInt(document.getElementById('cfgIndMACDSlow').value)||26,signal:parseInt(document.getElementById('cfgIndMACDSig').value)||9,buy_rule:document.getElementById('cfgIndMACDBuy').value,sell_rule:document.getElementById('cfgIndMACDSell').value},
+          stoch:{enabled:document.getElementById('cfgIndStoch').checked,k_period:parseInt(document.getElementById('cfgIndStochK').value)||14,d_period:parseInt(document.getElementById('cfgIndStochD').value)||3,buy_below:parseInt(document.getElementById('cfgIndStochBuy').value)||20,sell_above:parseInt(document.getElementById('cfgIndStochSell').value)||80,buy_rule:document.getElementById('cfgIndStochBuyRule').value,sell_rule:document.getElementById('cfgIndStochSellRule').value},
+          vwap:{enabled:document.getElementById('cfgIndVWAP').checked,buy_rule:document.getElementById('cfgIndVWAPBuy').value,sell_rule:document.getElementById('cfgIndVWAPSell').value},
+          sar:{enabled:document.getElementById('cfgIndSAR').checked,start_af:parseFloat(document.getElementById('cfgIndSARStart').value)||0.02,max_af:parseFloat(document.getElementById('cfgIndSARMax').value)||0.2,buy_rule:document.getElementById('cfgIndSARBuy').value,sell_rule:document.getElementById('cfgIndSARSell').value},
+          cmf:{enabled:document.getElementById('cfgIndCMF').checked,period:parseInt(document.getElementById('cfgIndCMFPeriod').value)||20,buy_above:parseFloat(document.getElementById('cfgIndCMFBuy').value)||0.1,sell_below:parseFloat(document.getElementById('cfgIndCMFSell').value)||-0.1,buy_rule:document.getElementById('cfgIndCMFBuyRule').value,sell_rule:document.getElementById('cfgIndCMFSellRule').value},
+          vol:{enabled:document.getElementById('cfgIndVol').checked,buy_rule:document.getElementById('cfgIndVolBuy').value,sell_rule:document.getElementById('cfgIndVolSell').value},
+          min_buy_confirm:parseInt(document.getElementById('cfgMinBuyConfirm').value)||2,
+          min_sell_confirm:parseInt(document.getElementById('cfgMinSellConfirm').value)||2
         }
       };
     }
@@ -1650,7 +1678,7 @@ function renderConfig(c){
       '</div>'+
       // ===== CHART INDICATORS STRATEGY CONFIG =====
       '<div class="card" style="border-left:3px solid #00bcd4"><h3 style="color:#00bcd4">Chart Indicators Strategy</h3>'+
-        '<p style="color:var(--t3);font-size:10px;margin-bottom:12px">Konfigurasi indikator untuk chart Market. Setiap indikator punya parameter dan rule buy/sell sendiri. Saat indicator diaktifkan, sinyal buy/sell dihitung otomatis.</p>'+
+        '<p style="color:var(--t3);font-size:10px;margin-bottom:12px">Konfigurasi indikator + Buy/Sell rules. Bot akan otomatis eksekusi berdasarkan rule ini saat indikator terpenuhi.</p>'+
         // EMA
         '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
           '<div style="display:flex;align-items:center;justify-content:space-between">'+
@@ -1658,7 +1686,8 @@ function renderConfig(c){
           '</div>'+
           '<div class="row" style="margin-top:8px">'+
             '<div class="col"><label>Period</label><input id="cfgIndEMAPeriod" class="input" type="number" value="'+dCip('ema',20)+'" min="2" max="500"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndEMABuy" class="input"><option value="price_above">Price crosses above EMA</option><option value="price_below">Price crosses below EMA</option></select></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndEMABuy" class="input"><option value="price_cross_above">Price crosses above EMA</option><option value="price_above">Price above EMA (trend up)</option><option value="ema_cross_up">EMA crosses above SMA</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndEMASell" class="input"><option value="price_cross_below">Price crosses below EMA</option><option value="price_below">Price below EMA (trend down)</option><option value="ema_cross_down">EMA crosses below SMA</option></select></div>'+
           '</div>'+
         '</div>'+
         // SMA
@@ -1668,7 +1697,8 @@ function renderConfig(c){
           '</div>'+
           '<div class="row" style="margin-top:8px">'+
             '<div class="col"><label>Period</label><input id="cfgIndSMAPeriod" class="input" type="number" value="'+dCip('sma',20)+'" min="2" max="500"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndSMABuy" class="input"><option value="price_above">Price crosses above SMA</option><option value="price_below">Price crosses below SMA</option></select></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndSMABuy" class="input"><option value="price_cross_above">Price crosses above SMA</option><option value="price_above">Price above SMA</option><option value="sma_cross_up">SMA crosses above EMA</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndSMASell" class="input"><option value="price_cross_below">Price crosses below SMA</option><option value="price_below">Price below SMA</option><option value="sma_cross_down">SMA crosses below EMA</option></select></div>'+
           '</div>'+
         '</div>'+
         // BB
@@ -1679,7 +1709,8 @@ function renderConfig(c){
           '<div class="row" style="margin-top:8px">'+
             '<div class="col"><label>Period</label><input id="cfgIndBBPeriod" class="input" type="number" value="'+dCip('bb',20)+'" min="2" max="200"></div>'+
             '<div class="col"><label>Std Dev</label><input id="cfgIndBBStd" class="input" type="number" step="0.1" value="'+(ci.bb&&ci.bb.std!==undefined?ci.bb.std:2)+'" min="0.5" max="5"></div>'+
-            '<div class="col"><label>Buy when price at</label><select id="cfgIndBBBuy" class="input"><option value="lower">Lower Band (support)</option><option value="middle">Middle Band</option></select></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndBBBuy" class="input"><option value="price_at_lower">Price touches Lower Band (bounce)</option><option value="price_below_lower">Price below Lower Band (breakout)</option><option value="squeeze_release">BB Squeeze release</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndBBSell" class="input"><option value="price_at_upper">Price touches Upper Band (bounce)</option><option value="price_above_upper">Price above Upper Band (breakout)</option><option value="price_cross_mid_down">Price crosses below Middle Band</option></select></div>'+
           '</div>'+
         '</div>'+
         // RSI
@@ -1691,6 +1722,8 @@ function renderConfig(c){
             '<div class="col"><label>Period</label><input id="cfgIndRSIPeriod" class="input" type="number" value="'+dCip('rsi',14)+'" min="2" max="100"></div>'+
             '<div class="col"><label>Buy Below (Oversold)</label><input id="cfgIndRSIBuy" class="input" type="number" value="'+dCib('rsi',30)+'" min="1" max="50"></div>'+
             '<div class="col"><label>Sell Above (Overbought)</label><input id="cfgIndRSISell" class="input" type="number" value="'+dCis('rsi',70)+'" min="50" max="99"></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndRSIBuyRule" class="input"><option value="cross_below">RSI crosses below level (enter oversold)</option><option value="cross_above">RSI crosses above level (exit oversold)</option><option value="below">RSI below level (sustained)</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndRSISellRule" class="input"><option value="cross_above">RSI crosses above level (enter overbought)</option><option value="cross_below">RSI crosses below level (exit overbought)</option><option value="above">RSI above level (sustained)</option></select></div>'+
           '</div>'+
         '</div>'+
         // MACD
@@ -1702,7 +1735,8 @@ function renderConfig(c){
             '<div class="col"><label>Fast</label><input id="cfgIndMACDFast" class="input" type="number" value="'+(ci.macd&&ci.macd.fast!==undefined?ci.macd.fast:12)+'" min="2" max="50"></div>'+
             '<div class="col"><label>Slow</label><input id="cfgIndMACDSlow" class="input" type="number" value="'+(ci.macd&&ci.macd.slow!==undefined?ci.macd.slow:26)+'" min="3" max="100"></div>'+
             '<div class="col"><label>Signal</label><input id="cfgIndMACDSig" class="input" type="number" value="'+(ci.macd&&ci.macd.signal!==undefined?ci.macd.signal:9)+'" min="2" max="50"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndMACDBuy" class="input"><option value="histogram_positive">Histogram turns positive</option><option value="crossover">MACD crosses above signal</option></select></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndMACDBuy" class="input"><option value="histogram_positive">Histogram turns positive</option><option value="crossover">MACD crosses above Signal</option><option value="histogram_growing">Histogram growing (momentum)</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndMACDSell" class="input"><option value="histogram_negative">Histogram turns negative</option><option value="crossunder">MACD crosses below Signal</option><option value="histogram_shrinking">Histogram shrinking (momentum)</option></select></div>'+
           '</div>'+
         '</div>'+
         // Stochastic
@@ -1715,6 +1749,8 @@ function renderConfig(c){
             '<div class="col"><label>%D Period</label><input id="cfgIndStochD" class="input" type="number" value="'+(ci.stoch&&ci.stoch.d_period!==undefined?ci.stoch.d_period:3)+'" min="2" max="50"></div>'+
             '<div class="col"><label>Buy Below</label><input id="cfgIndStochBuy" class="input" type="number" value="'+dCib('stoch',20)+'" min="1" max="50"></div>'+
             '<div class="col"><label>Sell Above</label><input id="cfgIndStochSell" class="input" type="number" value="'+dCis('stoch',80)+'" min="50" max="99"></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndStochBuyRule" class="input"><option value="cross_above_buy">%K crosses above level</option><option value="kd_cross_up">%K crosses above %D</option><option value="below">Stoch below level</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndStochSellRule" class="input"><option value="cross_below_sell">%K crosses below level</option><option value="kd_cross_down">%K crosses below %D</option><option value="above">Stoch above level</option></select></div>'+
           '</div>'+
         '</div>'+
         // VWAP
@@ -1723,7 +1759,8 @@ function renderConfig(c){
             '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndVWAP"'+(dCi('vwap',false)?' checked':'')+'> <span style="color:#00bcd4">VWAP (Volume Weighted Average Price)</span></label>'+
           '</div>'+
           '<div class="row" style="margin-top:8px">'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndVWAPBuy" class="input"><option value="price_below">Price below VWAP (undervalue)</option><option value="price_above">Price above VWAP (trend)</option></select></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndVWAPBuy" class="input"><option value="price_cross_above">Price crosses above VWAP</option><option value="price_below">Price below VWAP (undervalue)</option><option value="price_above">Price above VWAP (trend up)</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndVWAPSell" class="input"><option value="price_cross_below">Price crosses below VWAP</option><option value="price_above_sell">Price above VWAP (overvalue)</option><option value="price_below_sell">Price below VWAP (trend down)</option></select></div>'+
           '</div>'+
         '</div>'+
         // SAR
@@ -1734,7 +1771,8 @@ function renderConfig(c){
           '<div class="row" style="margin-top:8px">'+
             '<div class="col"><label>Start AF</label><input id="cfgIndSARStart" class="input" type="number" step="0.01" value="'+(ci.sar&&ci.sar.start_af!==undefined?ci.sar.start_af:0.02)+'" min="0.01" max="0.5"></div>'+
             '<div class="col"><label>Max AF</label><input id="cfgIndSARMax" class="input" type="number" step="0.01" value="'+(ci.sar&&ci.sar.max_af!==undefined?ci.sar.max_af:0.2)+'" min="0.1" max="0.5"></div>'+
-            '<div class="col"><label>Buy Rule</label><select id="cfgIndSARBuy" class="input"><option value="flip_below">SAR flips below price</option><option value="flip_above">SAR flips above price</option></select></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndSARBuy" class="input"><option value="flip_below">SAR flips below price (bullish)</option><option value="price_above_sar">Price above SAR (sustained)</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndSARSell" class="input"><option value="flip_above">SAR flips above price (bearish)</option><option value="price_below_sar">Price below SAR (sustained)</option></select></div>'+
           '</div>'+
         '</div>'+
         // CMF
@@ -1746,17 +1784,32 @@ function renderConfig(c){
             '<div class="col"><label>Period</label><input id="cfgIndCMFPeriod" class="input" type="number" value="'+dCip('cmf',20)+'" min="2" max="100"></div>'+
             '<div class="col"><label>Buy Above (money in)</label><input id="cfgIndCMFBuy" class="input" type="number" step="0.01" value="'+(ci.cmf&&ci.cmf.buy_above!==undefined?ci.cmf.buy_above:0.1)+'" min="-1" max="1"></div>'+
             '<div class="col"><label>Sell Below (money out)</label><input id="cfgIndCMFSell" class="input" type="number" step="0.01" value="'+(ci.cmf&&ci.cmf.sell_below!==undefined?ci.cmf.sell_below:-0.1)+'" min="-1" max="1"></div>'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndCMFBuyRule" class="input"><option value="cross_above">CMF crosses above level</option><option value="above">CMF above level (sustained)</option><option value="cross_zero_up">CMF crosses above zero</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndCMFSellRule" class="input"><option value="cross_below">CMF crosses below level</option><option value="below">CMF below level (sustained)</option><option value="cross_zero_down">CMF crosses below zero</option></select></div>'+
           '</div>'+
         '</div>'+
         // Volume
         '<div style="background:var(--s2);border:1px solid var(--b);border-radius:6px;padding:10px;margin-bottom:8px">'+
           '<div style="display:flex;align-items:center;justify-content:space-between">'+
-            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndVol"'+(dCi('vol',true)?' checked':'')+'> <span>Volume Histogram</span></label>'+
+            '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:bold"><input type="checkbox" id="cfgIndVol"'+(dCi('vol',true)?' checked':'')+'> <span>Volume</span></label>'+
           '</div>'+
-          '<p style="color:var(--t3);font-size:10px;margin-top:4px">Menampilkan volume bar di bawah candlestick. Hijau = bullish, Merah = bearish.</p>'+
+          '<div class="row" style="margin-top:8px">'+
+            '<div class="col"><label>Buy Rule</label><select id="cfgIndVolBuy" class="input"><option value="vol_above_avg">Volume above average</option><option value="vol_spike">Volume spike (2x avg)</option><option value="vol_increasing">Volume increasing trend</option></select></div>'+
+            '<div class="col"><label>Sell Rule</label><select id="cfgIndVolSell" class="input"><option value="vol_below_avg">Volume below average</option><option value="vol_drying">Volume drying up</option><option value="vol_decreasing">Volume decreasing trend</option></select></div>'+
+          '</div>'+
+          '<p style="color:var(--t3);font-size:10px;margin-top:4px">Volume bar di bawah candlestick. Hijau = bullish, Merah = bearish.</p>'+
+        '</div>'+
+        // SIGNAL CONFIRMATION
+        '<div style="background:var(--s2);border:1px solid #e8c547;border-radius:6px;padding:10px;margin-bottom:8px">'+
+          '<h4 style="color:#e8c547;margin-bottom:8px">Signal Confirmation</h4>'+
+          '<div class="row">'+
+            '<div class="col"><label>Min indicators agree for BUY</label><input id="cfgMinBuyConfirm" class="input" type="number" value="'+(ci.min_buy_confirm||2)+'" min="1" max="10"></div>'+
+            '<div class="col"><label>Min indicators agree for SELL</label><input id="cfgMinSellConfirm" class="input" type="number" value="'+(ci.min_sell_confirm||2)+'" min="1" max="10"></div>'+
+          '</div>'+
+          '<p style="color:var(--t3);font-size:10px;margin-top:4px">Bot hanya eksekusi BUY/SELL jika minimal N indikator setuju. Contoh: Jika 3 indikator aktif dan Min=2, minimal 2 dari 3 harus setuju.</p>'+
         '</div>'+
       '</div>'+
-      // Buttons
+// Buttons
       '<div style="display:flex;gap:8px;margin:12px 0">'+
         '<button class="btn btn-start" id="btnSyncM5">Sync M5 = M1</button>'+
         '<button class="btn btn-start" id="btnApplyAll" style="flex:1;font-size:14px;padding:12px">APPLY ALL CONFIG</button>'+
@@ -1859,16 +1912,18 @@ function renderConfig(c){
         m5_macd_enabled:document.getElementById('cfgM5MACDEn').checked,
         m5_rsi_enabled:document.getElementById('cfgM5RSIEn').checked,
         chart_indicators:{
-          ema:{enabled:document.getElementById('cfgIndEMA').checked,period:parseInt(document.getElementById('cfgIndEMAPeriod').value)||20},
-          sma:{enabled:document.getElementById('cfgIndSMA').checked,period:parseInt(document.getElementById('cfgIndSMAPeriod').value)||20},
-          bb:{enabled:document.getElementById('cfgIndBB').checked,period:parseInt(document.getElementById('cfgIndBBPeriod').value)||20,std:parseFloat(document.getElementById('cfgIndBBStd').value)||2},
-          rsi:{enabled:document.getElementById('cfgIndRSI').checked,period:parseInt(document.getElementById('cfgIndRSIPeriod').value)||14,buy_below:parseInt(document.getElementById('cfgIndRSIBuy').value)||30,sell_above:parseInt(document.getElementById('cfgIndRSISell').value)||70},
-          macd:{enabled:document.getElementById('cfgIndMACD').checked,fast:parseInt(document.getElementById('cfgIndMACDFast').value)||12,slow:parseInt(document.getElementById('cfgIndMACDSlow').value)||26,signal:parseInt(document.getElementById('cfgIndMACDSig').value)||9},
-          stoch:{enabled:document.getElementById('cfgIndStoch').checked,k_period:parseInt(document.getElementById('cfgIndStochK').value)||14,d_period:parseInt(document.getElementById('cfgIndStochD').value)||3,buy_below:parseInt(document.getElementById('cfgIndStochBuy').value)||20,sell_above:parseInt(document.getElementById('cfgIndStochSell').value)||80},
-          vwap:{enabled:document.getElementById('cfgIndVWAP').checked},
-          sar:{enabled:document.getElementById('cfgIndSAR').checked,start_af:parseFloat(document.getElementById('cfgIndSARStart').value)||0.02,max_af:parseFloat(document.getElementById('cfgIndSARMax').value)||0.2},
-          cmf:{enabled:document.getElementById('cfgIndCMF').checked,period:parseInt(document.getElementById('cfgIndCMFPeriod').value)||20,buy_above:parseFloat(document.getElementById('cfgIndCMFBuy').value)||0.1,sell_below:parseFloat(document.getElementById('cfgIndCMFSell').value)||-0.1},
-          vol:{enabled:document.getElementById('cfgIndVol').checked}
+          ema:{enabled:document.getElementById('cfgIndEMA').checked,period:parseInt(document.getElementById('cfgIndEMAPeriod').value)||20,buy_rule:document.getElementById('cfgIndEMABuy').value,sell_rule:document.getElementById('cfgIndEMASell').value},
+          sma:{enabled:document.getElementById('cfgIndSMA').checked,period:parseInt(document.getElementById('cfgIndSMAPeriod').value)||20,buy_rule:document.getElementById('cfgIndSMABuy').value,sell_rule:document.getElementById('cfgIndSMASell').value},
+          bb:{enabled:document.getElementById('cfgIndBB').checked,period:parseInt(document.getElementById('cfgIndBBPeriod').value)||20,std:parseFloat(document.getElementById('cfgIndBBStd').value)||2,buy_rule:document.getElementById('cfgIndBBBuy').value,sell_rule:document.getElementById('cfgIndBBSell').value},
+          rsi:{enabled:document.getElementById('cfgIndRSI').checked,period:parseInt(document.getElementById('cfgIndRSIPeriod').value)||14,buy_below:parseInt(document.getElementById('cfgIndRSIBuy').value)||30,sell_above:parseInt(document.getElementById('cfgIndRSISell').value)||70,buy_rule:document.getElementById('cfgIndRSIBuyRule').value,sell_rule:document.getElementById('cfgIndRSISellRule').value},
+          macd:{enabled:document.getElementById('cfgIndMACD').checked,fast:parseInt(document.getElementById('cfgIndMACDFast').value)||12,slow:parseInt(document.getElementById('cfgIndMACDSlow').value)||26,signal:parseInt(document.getElementById('cfgIndMACDSig').value)||9,buy_rule:document.getElementById('cfgIndMACDBuy').value,sell_rule:document.getElementById('cfgIndMACDSell').value},
+          stoch:{enabled:document.getElementById('cfgIndStoch').checked,k_period:parseInt(document.getElementById('cfgIndStochK').value)||14,d_period:parseInt(document.getElementById('cfgIndStochD').value)||3,buy_below:parseInt(document.getElementById('cfgIndStochBuy').value)||20,sell_above:parseInt(document.getElementById('cfgIndStochSell').value)||80,buy_rule:document.getElementById('cfgIndStochBuyRule').value,sell_rule:document.getElementById('cfgIndStochSellRule').value},
+          vwap:{enabled:document.getElementById('cfgIndVWAP').checked,buy_rule:document.getElementById('cfgIndVWAPBuy').value,sell_rule:document.getElementById('cfgIndVWAPSell').value},
+          sar:{enabled:document.getElementById('cfgIndSAR').checked,start_af:parseFloat(document.getElementById('cfgIndSARStart').value)||0.02,max_af:parseFloat(document.getElementById('cfgIndSARMax').value)||0.2,buy_rule:document.getElementById('cfgIndSARBuy').value,sell_rule:document.getElementById('cfgIndSARSell').value},
+          cmf:{enabled:document.getElementById('cfgIndCMF').checked,period:parseInt(document.getElementById('cfgIndCMFPeriod').value)||20,buy_above:parseFloat(document.getElementById('cfgIndCMFBuy').value)||0.1,sell_below:parseFloat(document.getElementById('cfgIndCMFSell').value)||-0.1,buy_rule:document.getElementById('cfgIndCMFBuyRule').value,sell_rule:document.getElementById('cfgIndCMFSellRule').value},
+          vol:{enabled:document.getElementById('cfgIndVol').checked,buy_rule:document.getElementById('cfgIndVolBuy').value,sell_rule:document.getElementById('cfgIndVolSell').value},
+          min_buy_confirm:parseInt(document.getElementById('cfgMinBuyConfirm').value)||2,
+          min_sell_confirm:parseInt(document.getElementById('cfgMinSellConfirm').value)||2
         }
       };
     }
