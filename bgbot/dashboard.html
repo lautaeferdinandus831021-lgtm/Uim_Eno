@@ -1593,146 +1593,91 @@ function _mktLoadIndicatorConfig(){
     }
 </script>
 <script>
-// === CONFIG ===
+// === CONFIG DUAL TF ===
 
-// Indicator definitions (shared between M1/M5)
 var _indDefs = {
-  ema:    {n:'EMA',          c:'#ff9f43', p:[{f:'period',d:20,mn:2,mx:500}],
-    br:[{v:'cross_above',l:'Price crosses above EMA'},{v:'above',l:'Price above EMA'},{v:'cross_up',l:'EMA crosses up'}],
-    sr:[{v:'cross_below',l:'Price crosses below EMA'},{v:'below',l:'Price below EMA'},{v:'cross_down',l:'EMA crosses down'}]},
-  sma:    {n:'SMA',          c:'#4682ff', p:[{f:'period',d:20,mn:2,mx:500}],
-    br:[{v:'cross_above',l:'Price crosses above SMA'},{v:'above',l:'Price above SMA'}],
-    sr:[{v:'cross_below',l:'Price crosses below SMA'},{v:'below',l:'Price below SMA'}]},
-  bb:     {n:'Bollinger',    c:'#aaa',    p:[{f:'period',d:20,mn:2,mx:200},{f:'std',d:2,mn:0.5,mx:5}],
-    br:[{v:'at_lower',l:'Price at Lower Band'},{v:'below_lower',l:'Below Lower Band'},{v:'squeeze',l:'BB Squeeze release'}],
-    sr:[{v:'at_upper',l:'Price at Upper Band'},{v:'above_upper',l:'Above Upper Band'},{v:'cross_mid_down',l:'Cross below Mid'}]},
-  rsi:    {n:'RSI',          c:'#e8c547', p:[{f:'period',d:14,mn:2,mx:100}],
-    br:[{v:'cross_below',l:'RSI enters oversold'},{v:'cross_above_exit',l:'RSI exits oversold'},{v:'below',l:'RSI below level'}],
-    sr:[{v:'cross_above',l:'RSI enters overbought'},{v:'cross_below_exit',l:'RSI exits overbought'},{v:'above',l:'RSI above level'}]},
-  macd:   {n:'MACD',         c:'#4682ff', p:[{f:'fast',d:12,mn:2,mx:50},{f:'slow',d:26,mn:3,mx:100},{f:'signal',d:9,mn:2,mx:50}],
-    br:[{v:'hist_pos',l:'Histogram positive'},{v:'crossover',l:'MACD crosses above Signal'},{v:'hist_grow',l:'Histogram growing'}],
-    sr:[{v:'hist_neg',l:'Histogram negative'},{v:'crossunder',l:'MACD crosses below Signal'},{v:'hist_shrink',l:'Histogram shrinking'}]},
-  stoch:  {n:'Stochastic',   c:'#ff6b9d', p:[{f:'k_period',d:14,mn:2,mx:100},{f:'d_period',d:3,mn:2,mx:50}],
-    br:[{v:'kd_cross_up',l:'%K crosses above %D'},{v:'cross_above',l:'%K above level'},{v:'below',l:'Below level'}],
-    sr:[{v:'kd_cross_down',l:'%K crosses below %D'},{v:'cross_below',l:'%K below level'},{v:'above',l:'Above level'}]},
-  vwap:   {n:'VWAP',         c:'#00bcd4', p:[],
-    br:[{v:'cross_above',l:'Price crosses above VWAP'},{v:'below',l:'Price below VWAP'}],
-    sr:[{v:'cross_below',l:'Price crosses below VWAP'},{v:'above',l:'Price above VWAP'}]},
-  sar:    {n:'Parabolic SAR',c:'#ff6b9d', p:[{f:'start_af',d:0.02,mn:0.01,mx:0.5},{f:'max_af',d:0.2,mn:0.1,mx:0.5}],
-    br:[{v:'flip_below',l:'SAR flips below price'},{v:'above_sar',l:'Price above SAR'}],
-    sr:[{v:'flip_above',l:'SAR flips above price'},{v:'below_sar',l:'Price below SAR'}]},
-  cmf:    {n:'CMF',          c:'#8bc34a', p:[{f:'period',d:20,mn:2,mx:100}],
-    br:[{v:'cross_above',l:'CMF crosses above level'},{v:'cross_zero_up',l:'CMF crosses above zero'}],
-    sr:[{v:'cross_below',l:'CMF crosses below level'},{v:'cross_zero_down',l:'CMF crosses below zero'}]},
-  vol:    {n:'Volume',       c:'#888',    p:[],
-    br:[{v:'above_avg',l:'Volume above average'},{v:'spike',l:'Volume spike 2x'}],
-    sr:[{v:'below_avg',l:'Volume below average'},{v:'drying',l:'Volume drying up'}]},
-  trend:  {n:'Trendlines',   c:'#ff9800', p:[{f:'lookback',d:50,mn:10,mx:200}],
-    br:[{v:'support_bounce',l:'Bounce off support'},{v:'break_resistance',l:'Break resistance'}],
-    sr:[{v:'resistance_bounce',l:'Bounce off resistance'},{v:'break_support',l:'Break support'}]},
-  pivot:  {n:'Pivot Points', c:'#9c27b0', p:[],
-    br:[{v:'above_pivot',l:'Above Pivot'},{v:'above_r1',l:'Above R1'},{v:'above_r2',l:'Above R2'}],
-    sr:[{v:'below_pivot',l:'Below Pivot'},{v:'below_s1',l:'Below S1'},{v:'below_s2',l:'Below S2'}]},
-  donchian:{n:'Donchian',    c:'#00bcd4', p:[{f:'period',d:20,mn:5,mx:100}],
-    br:[{v:'break_upper',l:'Break upper channel'},{v:'bounce_lower',l:'Bounce lower channel'}],
-    sr:[{v:'break_lower',l:'Break lower channel'},{v:'bounce_upper',l:'Bounce upper channel'}]},
-  keltner:{n:'Keltner',      c:'#8bc34a', p:[{f:'period',d:20,mn:5,mx:100},{f:'multiplier',d:2,mn:0.5,mx:5}],
-    br:[{v:'bounce_lower',l:'Bounce lower band'},{v:'break_upper',l:'Break upper band'}],
-    sr:[{v:'bounce_upper',l:'Bounce upper band'},{v:'break_lower',l:'Break lower band'}]},
-  elder:  {n:'Elder-Ray',    c:'#ff6b9d', p:[{f:'period',d:13,mn:2,mx:50}],
-    br:[{v:'bulls_pos',l:'Bulls Power positive'},{v:'bulls_grow',l:'Bulls Power growing'}],
-    sr:[{v:'bears_neg',l:'Bears Power negative'},{v:'bears_grow',l:'Bears growing negative'}]},
-  dmi:    {n:'DMI/ADX',      c:'#e8c547', p:[{f:'period',d:14,mn:5,mx:50}],
-    br:[{v:'plus_di_above',l:'+DI above -DI'},{v:'adx_strong',l:'ADX above 20'}],
-    sr:[{v:'minus_di_above',l:'-DI above +DI'},{v:'adx_strong',l:'ADX above 20'}]},
-  pa:     {n:'Price Action', c:'#ff9f43', p:[{f:'lookback',d:5,mn:2,mx:20}],
-    br:[{v:'hammer',l:'Hammer'},{v:'morning_star',l:'Morning Star'},{v:'bullish_engulf',l:'Bullish Engulfing'}],
-    sr:[{v:'shooting_star',l:'Shooting Star'},{v:'evening_star',l:'Evening Star'},{v:'bearish_engulf',l:'Bearish Engulfing'}]}
+  ema:{n:'EMA',c:'#ff9f43',p:[{f:'period',d:20,mn:2,mx:500}],br:[{v:'cross_above',l:'Price crosses above'},{v:'above',l:'Price above EMA'}],sr:[{v:'cross_below',l:'Price crosses below'},{v:'below',l:'Price below EMA'}]},
+  sma:{n:'SMA',c:'#4682ff',p:[{f:'period',d:20,mn:2,mx:500}],br:[{v:'cross_above',l:'Price crosses above'},{v:'above',l:'Price above SMA'}],sr:[{v:'cross_below',l:'Price crosses below'},{v:'below',l:'Price below SMA'}]},
+  bb:{n:'Bollinger',c:'#aaa',p:[{f:'period',d:20,mn:2,mx:200},{f:'std',d:2,mn:0.5,mx:5}],br:[{v:'at_lower',l:'Price at Lower Band'},{v:'squeeze',l:'BB Squeeze release'}],sr:[{v:'at_upper',l:'Price at Upper Band'},{v:'cross_mid_down',l:'Cross below Mid'}]},
+  rsi:{n:'RSI',c:'#e8c547',p:[{f:'period',d:14,mn:2,mx:100}],br:[{v:'cross_below',l:'RSI enters oversold'},{v:'below',l:'RSI below level'}],sr:[{v:'cross_above',l:'RSI enters overbought'},{v:'above',l:'RSI above level'}]},
+  macd:{n:'MACD',c:'#4682ff',p:[{f:'fast',d:12,mn:2,mx:50},{f:'slow',d:26,mn:3,mx:100},{f:'signal',d:9,mn:2,mx:50}],br:[{v:'hist_pos',l:'Histogram positive'},{v:'crossover',l:'MACD cross above Signal'}],sr:[{v:'hist_neg',l:'Histogram negative'},{v:'crossunder',l:'MACD cross below Signal'}]},
+  stoch:{n:'Stochastic',c:'#ff6b9d',p:[{f:'k_period',d:14,mn:2,mx:100},{f:'d_period',d:3,mn:2,mx:50}],br:[{v:'kd_cross_up',l:'%K crosses above %D'},{v:'below',l:'Below level'}],sr:[{v:'kd_cross_down',l:'%K crosses below %D'},{v:'above',l:'Above level'}]},
+  vwap:{n:'VWAP',c:'#00bcd4',p:[],br:[{v:'cross_above',l:'Price crosses above VWAP'},{v:'below',l:'Price below VWAP'}],sr:[{v:'cross_below',l:'Price crosses below VWAP'},{v:'above',l:'Price above VWAP'}]},
+  sar:{n:'Parabolic SAR',c:'#ff6b9d',p:[{f:'start_af',d:0.02,mn:0.01,mx:0.5},{f:'max_af',d:0.2,mn:0.1,mx:0.5}],br:[{v:'flip_below',l:'SAR flips below'}],sr:[{v:'flip_above',l:'SAR flips above'}]},
+  cmf:{n:'CMF',c:'#8bc34a',p:[{f:'period',d:20,mn:2,mx:100}],br:[{v:'cross_above',l:'CMF crosses above level'},{v:'cross_zero_up',l:'CMF crosses zero up'}],sr:[{v:'cross_below',l:'CMF crosses below level'},{v:'cross_zero_down',l:'CMF crosses zero down'}]},
+  vol:{n:'Volume',c:'#888',p:[],br:[{v:'above_avg',l:'Volume above avg'},{v:'spike',l:'Volume spike 2x'}],sr:[{v:'below_avg',l:'Volume below avg'},{v:'drying',l:'Volume drying up'}]},
+  trend:{n:'Trendlines',c:'#ff9800',p:[{f:'lookback',d:50,mn:10,mx:200}],br:[{v:'support_bounce',l:'Bounce off support'}],sr:[{v:'resistance_bounce',l:'Bounce off resistance'}]},
+  pivot:{n:'Pivot Points',c:'#9c27b0',p:[],br:[{v:'above_pivot',l:'Above Pivot'},{v:'above_r1',l:'Above R1'}],sr:[{v:'below_pivot',l:'Below Pivot'},{v:'below_s1',l:'Below S1'}]},
+  donchian:{n:'Donchian',c:'#00bcd4',p:[{f:'period',d:20,mn:5,mx:100}],br:[{v:'break_upper',l:'Break upper channel'}],sr:[{v:'break_lower',l:'Break lower channel'}]},
+  keltner:{n:'Keltner',c:'#8bc34a',p:[{f:'period',d:20,mn:5,mx:100},{f:'multiplier',d:2,mn:0.5,mx:5}],br:[{v:'bounce_lower',l:'Bounce lower band'}],sr:[{v:'bounce_upper',l:'Bounce upper band'}]},
+  elder:{n:'Elder-Ray',c:'#ff6b9d',p:[{f:'period',d:13,mn:2,mx:50}],br:[{v:'bulls_pos',l:'Bulls Power positive'}],sr:[{v:'bears_neg',l:'Bears Power negative'}]},
+  dmi:{n:'DMI/ADX',c:'#e8c547',p:[{f:'period',d:14,mn:5,mx:50}],br:[{v:'plus_di_above',l:'+DI above -DI'}],sr:[{v:'minus_di_above',l:'-DI above +DI'}]},
+  pa:{n:'Price Action',c:'#ff9f43',p:[{f:'lookback',d:5,mn:2,mx:20}],br:[{v:'hammer',l:'Hammer'},{v:'morning_star',l:'Morning Star'},{v:'bullish_engulf',l:'Bullish Engulfing'}],sr:[{v:'shooting_star',l:'Shooting Star'},{v:'evening_star',l:'Evening Star'},{v:'bearish_engulf',l:'Bearish Engulfing'}]}
 };
 
-// Build indicator panel for one timeframe (M1 or M5)
-function _buildTFPanel(px, ciTf, color) {
-  var h = '';
-  var isOn = function(o){return o&&o.enabled!==false;};
-  var gP = function(o,d){return o&&o.period!==undefined?o.period:d;};
-
-  // Indicator parameters grid
-  h += '<div class="card"><h3 style="color:'+color+'">'+px+' Indicator Parameters</h3>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+function _buildIndParams(px, ciTf) {
+  var h='';
   Object.keys(_indDefs).forEach(function(k){
-    var d = _indDefs[k]; var ciK = ciTf[k]||{};
-    var on = ciK.enabled !== undefined ? ciK.enabled : (k==='ema'||k==='bb'||k==='rsi'||k==='macd'||k==='vol');
-    var ph = '';
-    if(d.p.length > 0){
-      ph = '<div style="display:flex;gap:4px;margin-top:4px">';
+    var d=_indDefs[k]; var ciK=ciTf[k]||{};
+    var on=ciK.enabled!==undefined?ciK.enabled:(k==='ema'||k==='bb'||k==='rsi'||k==='macd'||k==='vol');
+    h+='<div style="background:var(--s2);border-radius:4px;padding:6px">';
+    h+='<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-weight:bold;font-size:11px">';
+    h+='<input type="checkbox" id="'+px+'_ind_'+k+'"'+(on?' checked':'')+'>';
+    h+='<span style="color:'+d.c+'">'+d.n+'</span></label>';
+    if(d.p.length>0){
+      h+='<div style="display:flex;gap:3px;margin-top:3px">';
       d.p.forEach(function(pr){
-        var v = ciK[pr.f] !== undefined ? ciK[pr.f] : pr.d;
-        ph += '<div style="flex:1"><label style="font-size:10px;color:var(--t3)">'+pr.f.replace(/_/g,' ')+'</label>';
-        ph += '<input id="'+px+'_'+k+'_'+pr.f+'" class="input" type="number" step="any" value="'+v+'" min="'+pr.mn+'" max="'+pr.mx+'" style="margin:0"></div>';
+        var v=ciK[pr.f]!==undefined?ciK[pr.f]:pr.d;
+        h+='<div style="flex:1"><label style="font-size:9px;color:var(--t3)">'+pr.f.replace(/_/g,' ')+'</label>';
+        h+='<input id="'+px+'_'+k+'_'+pr.f+'" class="input" type="number" step="any" value="'+v+'" min="'+pr.mn+'" max="'+pr.mx+'" style="margin:0;font-size:11px;padding:3px"></div>';
       });
-      ph += '</div>';
+      h+='</div>';
     }
-    h += '<div style="background:var(--s2);border-radius:6px;padding:8px">';
-    h += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:bold">';
-    h += '<input type="checkbox" id="'+px+'_ind_'+k+'"'+(on?' checked':'')+'>';
-    h += '<span style="color:'+d.c+'">'+d.n+'</span></label>'+ph+'</div>';
+    h+='</div>';
   });
-  h += '</div></div>';
-
-  // Buy Strategy
-  h += '<div class="card" style="border-left:3px solid '+color+'"><h3 style="color:'+color+'">'+px+' BUY STRATEGY</h3>';
-  h += '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--b);font-size:10px;color:var(--t3)"><span></span><span>INDICATOR</span><span>BUY RULE</span></div>';
-  Object.keys(_indDefs).forEach(function(k){
-    var d = _indDefs[k]; var ciK = ciTf[k]||{};
-    var en = ciK.buy_enabled !== undefined ? ciK.buy_enabled : false;
-    var sel = ciK.buy_rule || d.br[0].v;
-    h += '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(42,42,42,0.3)">';
-    h += '<input type="checkbox" id="'+px+'_buy_'+k+'"'+(en?' checked':'')+'>';
-    h += '<span style="font-weight:bold;color:'+d.c+'">'+d.n+'</span>';
-    h += '<select class="input" id="'+px+'_buyRule_'+k+'" style="margin:0">';
-    d.br.forEach(function(r){h += '<option value="'+r.v+'"'+(sel===r.v?' selected':'')+'>'+r.l+'</option>';});
-    h += '</select></div>';
-  });
-  h += '<div style="margin-top:10px;display:flex;align-items:center;gap:8px"><span style="font-weight:bold">Min agree:</span>';
-  h += '<input id="'+px+'_minBuyConfirm" class="input" type="number" value="'+(ciTf.min_buy_confirm||2)+'" min="1" max="17" style="width:60px;margin:0"><span style="font-size:10px;color:var(--t3)">to BUY</span></div></div>';
-
-  // Sell Strategy
-  h += '<div class="card" style="border-left:3px solid var(--r)"><h3 style="color:var(--r)">'+px+' SELL STRATEGY</h3>';
-  h += '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;padding:4px 0;border-bottom:1px solid var(--b);font-size:10px;color:var(--t3)"><span></span><span>INDICATOR</span><span>SELL RULE</span></div>';
-  Object.keys(_indDefs).forEach(function(k){
-    var d = _indDefs[k]; var ciK = ciTf[k]||{};
-    var en = ciK.sell_enabled !== undefined ? ciK.sell_enabled : false;
-    var sel = ciK.sell_rule || d.sr[0].v;
-    h += '<div style="display:grid;grid-template-columns:24px 100px 1fr;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(42,42,42,0.3)">';
-    h += '<input type="checkbox" id="'+px+'_sell_'+k+'"'+(en?' checked':'')+'>';
-    h += '<span style="font-weight:bold;color:'+d.c+'">'+d.n+'</span>';
-    h += '<select class="input" id="'+px+'_sellRule_'+k+'" style="margin:0">';
-    d.sr.forEach(function(r){h += '<option value="'+r.v+'"'+(sel===r.v?' selected':'')+'>'+r.l+'</option>';});
-    h += '</select></div>';
-  });
-  h += '<div style="margin-top:10px;display:flex;align-items:center;gap:8px"><span style="font-weight:bold">Min agree:</span>';
-  h += '<input id="'+px+'_minSellConfirm" class="input" type="number" value="'+(ciTf.min_sell_confirm||2)+'" min="1" max="17" style="width:60px;margin:0"><span style="font-size:10px;color:var(--t3)">to SELL</span></div></div>';
-
   return h;
 }
 
-// Build config payload for one timeframe
-function _buildTFPayload(px) {
-  var p = {};
+function _buildStrategy(px, ciTf, type) {
+  var h='';
   Object.keys(_indDefs).forEach(function(k){
-    var el = document.getElementById(px+'_ind_'+k);
-    p[k] = {enabled: el ? el.checked : false};
-    _indDefs[k].p.forEach(function(pr){
-      var inp = document.getElementById(px+'_'+k+'_'+pr.f);
-      if(inp) p[k][pr.f] = parseFloat(inp.value) || 0;
-    });
-    var be = document.getElementById(px+'_buy_'+k); if(be) p[k].buy_enabled = be.checked;
-    var se = document.getElementById(px+'_sell_'+k); if(se) p[k].sell_enabled = se.checked;
-    var br = document.getElementById(px+'_buyRule_'+k); if(br) p[k].buy_rule = br.value;
-    var sr = document.getElementById(px+'_sellRule_'+k); if(sr) p[k].sell_rule = sr.value;
+    var d=_indDefs[k]; var ciK=ciTf[k]||{};
+    if(type==='buy'){
+      var en=ciK.buy_enabled!==undefined?ciK.buy_enabled:false;
+      var sel=ciK.buy_rule||d.br[0].v;
+      var opts=d.br;
+    } else {
+      var en=ciK.sell_enabled!==undefined?ciK.sell_enabled:false;
+      var sel=ciK.sell_rule||d.sr[0].v;
+      var opts=d.sr;
+    }
+    h+='<div style="display:grid;grid-template-columns:20px 1fr;gap:4px;align-items:center;padding:2px 0;border-bottom:1px solid rgba(42,42,42,0.15)">';
+    h+='<input type="checkbox" id="'+px+'_'+type+'_'+k+'"'+(en?' checked':'')+'>';
+    h+='<div style="display:flex;align-items:center;gap:4px">';
+    h+='<span style="font-weight:bold;color:'+d.c+';font-size:10px;min-width:52px">'+d.n+'</span>';
+    h+='<select class="input" id="'+px+'_'+type+'Rule_'+k+'" style="margin:0;font-size:10px;padding:2px">';
+    opts.forEach(function(r){h+='<option value="'+r.v+'"'+(sel===r.v?' selected':'')+'>'+r.l+'</option>';});
+    h+='</select></div></div>';
   });
-  p.min_buy_confirm = parseInt(document.getElementById(px+'_minBuyConfirm').value) || 2;
-  p.min_sell_confirm = parseInt(document.getElementById(px+'_minSellConfirm').value) || 2;
+  return h;
+}
+
+function _buildTFPayload(px) {
+  var p={};
+  Object.keys(_indDefs).forEach(function(k){
+    var el=document.getElementById(px+'_ind_'+k);
+    p[k]={enabled:el?el.checked:false};
+    _indDefs[k].p.forEach(function(pr){
+      var inp=document.getElementById(px+'_'+k+'_'+pr.f);
+      if(inp) p[k][pr.f]=parseFloat(inp.value)||0;
+    });
+    var be=document.getElementById(px+'_buy_'+k);if(be) p[k].buy_enabled=be.checked;
+    var se=document.getElementById(px+'_sell_'+k);if(se) p[k].sell_enabled=se.checked;
+    var br=document.getElementById(px+'_buyRule_'+k);if(br) p[k].buy_rule=br.value;
+    var sr=document.getElementById(px+'_sellRule_'+k);if(sr) p[k].sell_rule=sr.value;
+  });
+  p.min_buy_confirm=parseInt(document.getElementById(px+'_minBuyConfirm').value)||2;
+  p.min_sell_confirm=parseInt(document.getElementById(px+'_minSellConfirm').value)||2;
   return p;
 }
 
@@ -1745,7 +1690,6 @@ function renderConfig(c){
     api('GET','/api/market/futures-symbols').catch(function(){return{symbols:[]};})
   ]).then(function(r){
     var cfg=r[0]||{};var st=r[1]||{};var spotPairs=r[2].symbols||[];var futPairs=r[3].symbols||[];
-    var m1=st.m1||{};var m5=st.m5||{};
     var tm=cfg.mode||'spot';var bt=cfg.balance_type||'demo';var pair=cfg.pair||'BTCUSDT';
     var os=cfg.order_size||0.001;var tp=cfg.tp_percent||0.6;var sl=cfg.sl_percent||0.3;
     var pairs=tm==='perpetual'?futPairs:spotPairs;if(!pairs.length)pairs=[pair];
@@ -1753,118 +1697,121 @@ function renderConfig(c){
     var ci=cfg.chart_indicators||{};
     var m1En=cfg.m1_enabled!==false;var m5En=cfg.m5_enabled===true;
     var m1c=cfg.m1||{};var m5c=cfg.m5||{};
+    var ciM1=ci.m1||{};var ciM5=ci.m5||{};
 
-    var h = '';
+    var h='';
 
     // API Config
-    h += '<div class="card"><h3>API Config (Bitget) <span id="cfgSaveBadge" style="font-size:10px;color:var(--a);opacity:0.3;margin-left:8px">Auto-saved</span></h3>';
-    h += '<div class="row"><div class="col"><label>API Key</label><input id="cfgApiKey" class="input" type="text" value="'+(cfg.api_key||'')+'"></div></div>';
-    h += '<div class="row"><div class="col"><label>API Secret</label><input id="cfgApiSecret" class="input" type="text" value="'+(cfg.api_secret||'')+'"></div></div>';
-    h += '<div class="row"><div class="col"><label>Passphrase</label><input id="cfgApiPass" class="input" type="text" value="'+(cfg.api_passphrase||'')+'"></div></div></div>';
+    h+='<div class="card"><h3>API Config <span id="cfgSaveBadge" style="font-size:10px;color:var(--a);opacity:0.3;margin-left:8px">Auto-saved</span></h3>';
+    h+='<div class="row"><div class="col"><label>API Key</label><input id="cfgApiKey" class="input" type="text" value="'+(cfg.api_key||'')+'"></div></div>';
+    h+='<div class="row"><div class="col"><label>API Secret</label><input id="cfgApiSecret" class="input" type="text" value="'+(cfg.api_secret||'')+'"></div></div>';
+    h+='<div class="row"><div class="col"><label>Passphrase</label><input id="cfgApiPass" class="input" type="text" value="'+(cfg.api_passphrase||'')+'"></div></div></div>';
 
     // Trade Config
-    h += '<div class="card"><h3>Trade Config</h3>';
-    h += '<div class="row"><div class="col"><label>Mode</label><select id="cfgTradeMode" class="input"><option value="spot">Spot</option><option value="perpetual">Perpetual</option></select></div>';
-    h += '<div class="col"><label>Pair</label><select id="cfgPair" class="input">'+pairOpts+'</select></div>';
-    h += '<div class="col"><label>Account</label><div style="display:flex;gap:12px;padding:8px 0">';
-    h += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="balType" id="cfgBalDemo" value="demo"> DEMO</label>';
-    h += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="balType" id="cfgBalReal" value="real"> REAL</label></div></div></div>';
-    h += '<div class="row" style="margin-top:8px"><div class="col"><label>Order Size</label><input id="cfgOrderSize" class="input" type="number" step="0.0001" value="'+os+'"></div>';
-    h += '<div class="col"><label>TP %</label><input id="cfgTP" class="input" type="number" step="0.1" value="'+tp+'"></div>';
-    h += '<div class="col"><label>SL %</label><input id="cfgSL" class="input" type="number" step="0.1" value="'+sl+'"></div></div></div>';
+    h+='<div class="card"><h3>Trade Config</h3>';
+    h+='<div class="row"><div class="col"><label>Mode</label><select id="cfgTradeMode" class="input"><option value="spot">Spot</option><option value="perpetual">Perpetual</option></select></div>';
+    h+='<div class="col"><label>Pair</label><select id="cfgPair" class="input">'+pairOpts+'</select></div>';
+    h+='<div class="col"><label>Account</label><div style="display:flex;gap:12px;padding:8px 0">';
+    h+='<label style="cursor:pointer"><input type="radio" name="balType" id="cfgBalDemo" value="demo"> DEMO</label>';
+    h+='<label style="cursor:pointer"><input type="radio" name="balType" id="cfgBalReal" value="real"> REAL</label></div></div></div>';
+    h+='<div class="row" style="margin-top:8px"><div class="col"><label>Order Size</label><input id="cfgOrderSize" class="input" type="number" step="0.0001" value="'+os+'"></div>';
+    h+='<div class="col"><label>TP %</label><input id="cfgTP" class="input" type="number" step="0.1" value="'+tp+'"></div>';
+    h+='<div class="col"><label>SL %</label><input id="cfgSL" class="input" type="number" step="0.1" value="'+sl+'"></div></div></div>';
 
-    // Timeframe toggles
-    h += '<div class="card"><h3>Timeframe Activation</h3>';
-    h += '<p style="color:var(--t3);font-size:10px;margin-bottom:8px">Aktifkan M1 dan/atau M5. Masing-masing punya 17 indikator yang dikonfigurasi independen.</p>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-    h += '<div style="background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:12px;border-left:3px solid #00d4aa">';
-    h += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfgM1Enabled"'+(m1En?' checked':'')+'>';
-    h += '<span style="font-weight:bold;color:#00d4aa;font-size:16px">M1 (1 minute)</span></label>';
-    h += '<select id="cfgM1Source" class="input" style="margin-top:8px;width:100px"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div>';
-    h += '<div style="background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:12px;border-left:3px solid #ff9f43">';
-    h += '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfgM5Enabled"'+(m5En?' checked':'')+'>';
-    h += '<span style="font-weight:bold;color:#ff9f43;font-size:16px">M5 (5 minutes)</span></label>';
-    h += '<select id="cfgM5Source" class="input" style="margin-top:8px;width:100px"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div></div></div>';
+    // ===== DUAL TF SIDE BY SIDE =====
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">';
 
-    // TF sub-tabs
-    h += '<div style="display:flex;gap:0;margin-bottom:0">';
-    h += '<button id="tabM1Cfg" class="btn" style="flex:1;border-radius:6px 0 0 0;border-bottom:3px solid #00d4aa;background:var(--s2);padding:10px;font-weight:bold;color:#00d4aa">M1 Configuration</button>';
-    h += '<button id="tabM5Cfg" class="btn" style="flex:1;border-radius:0 6px 0 0;border-bottom:3px solid transparent;background:var(--s);padding:10px;font-weight:bold;color:var(--t3)">M5 Configuration</button></div>';
-    h += '<div id="m1CfgPanel">'+_buildTFPanel('M1', ci.m1||{}, '#00d4aa')+'</div>';
-    h += '<div id="m5CfgPanel" style="display:none">'+_buildTFPanel('M5', ci.m5||{}, '#ff9f43')+'</div>';
+    // ===== M1 LEFT =====
+    h+='<div style="border:2px solid #00d4aa;border-radius:10px;overflow:hidden;background:var(--s1)">';
+    h+='<div style="background:linear-gradient(135deg,rgba(0,212,170,0.15),rgba(0,212,170,0.05));padding:12px;border-bottom:2px solid #00d4aa">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between">';
+    h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfgM1Enabled"'+(m1En?' checked':'')+'>';
+    h+='<span style="font-size:18px;font-weight:bold;color:#00d4aa">M1</span>';
+    h+='<span style="font-size:11px;color:var(--t3)">1 Minute</span></label>';
+    h+='<select id="cfgM1Source" class="input" style="width:80px;margin:0;font-size:11px"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div></div>';
+
+    h+='<div style="padding:10px"><h4 style="color:#00d4aa;font-size:12px;margin-bottom:8px;border-bottom:1px solid var(--b);padding-bottom:4px">Parameters</h4>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+_buildIndParams('M1',ciM1)+'</div></div>';
+
+    h+='<div style="padding:10px;border-top:1px solid var(--b)"><h4 style="color:var(--a);font-size:12px;margin-bottom:8px">BUY Strategy</h4>';
+    h+=_buildStrategy('M1',ciM1,'buy');
+    h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span style="font-weight:bold;font-size:11px">Min agree:</span>';
+    h+='<input id="M1_minBuyConfirm" class="input" type="number" value="'+(ciM1.min_buy_confirm||2)+'" min="1" max="17" style="width:50px;margin:0;font-size:11px"><span style="font-size:9px;color:var(--t3)">to BUY</span></div></div>';
+
+    h+='<div style="padding:10px;border-top:1px solid var(--b)"><h4 style="color:var(--r);font-size:12px;margin-bottom:8px">SELL Strategy</h4>';
+    h+=_buildStrategy('M1',ciM1,'sell');
+    h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span style="font-weight:bold;font-size:11px">Min agree:</span>';
+    h+='<input id="M1_minSellConfirm" class="input" type="number" value="'+(ciM1.min_sell_confirm||2)+'" min="1" max="17" style="width:50px;margin:0;font-size:11px"><span style="font-size:9px;color:var(--t3)">to SELL</span></div></div>';
+
+    h+='</div>';
+
+    // ===== M5 RIGHT =====
+    h+='<div style="border:2px solid #ff9f43;border-radius:10px;overflow:hidden;background:var(--s1)">';
+    h+='<div style="background:linear-gradient(135deg,rgba(255,159,67,0.15),rgba(255,159,67,0.05));padding:12px;border-bottom:2px solid #ff9f43">';
+    h+='<div style="display:flex;align-items:center;justify-content:space-between">';
+    h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="cfgM5Enabled"'+(m5En?' checked':'')+'>';
+    h+='<span style="font-size:18px;font-weight:bold;color:#ff9f43">M5</span>';
+    h+='<span style="font-size:11px;color:var(--t3)">5 Minutes</span></label>';
+    h+='<select id="cfgM5Source" class="input" style="width:80px;margin:0;font-size:11px"><option value="close">Close</option><option value="open">Open</option><option value="high">High</option><option value="low">Low</option></select></div></div>';
+
+    h+='<div style="padding:10px"><h4 style="color:#ff9f43;font-size:12px;margin-bottom:8px;border-bottom:1px solid var(--b);padding-bottom:4px">Parameters</h4>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">'+_buildIndParams('M5',ciM5)+'</div></div>';
+
+    h+='<div style="padding:10px;border-top:1px solid var(--b)"><h4 style="color:var(--a);font-size:12px;margin-bottom:8px">BUY Strategy</h4>';
+    h+=_buildStrategy('M5',ciM5,'buy');
+    h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span style="font-weight:bold;font-size:11px">Min agree:</span>';
+    h+='<input id="M5_minBuyConfirm" class="input" type="number" value="'+(ciM5.min_buy_confirm||2)+'" min="1" max="17" style="width:50px;margin:0;font-size:11px"><span style="font-size:9px;color:var(--t3)">to BUY</span></div></div>';
+
+    h+='<div style="padding:10px;border-top:1px solid var(--b)"><h4 style="color:var(--r);font-size:12px;margin-bottom:8px">SELL Strategy</h4>';
+    h+=_buildStrategy('M5',ciM5,'sell');
+    h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px"><span style="font-weight:bold;font-size:11px">Min agree:</span>';
+    h+='<input id="M5_minSellConfirm" class="input" type="number" value="'+(ciM5.min_sell_confirm||2)+'" min="1" max="17" style="width:50px;margin:0;font-size:11px"><span style="font-size:9px;color:var(--t3)">to SELL</span></div></div>';
+
+    h+='</div></div>';
 
     // Buttons
-    h += '<div style="display:flex;gap:8px;margin:12px 0">';
-    h += '<button class="btn btn-start" id="btnApplyAll" style="flex:1;font-size:14px;padding:12px">APPLY ALL CONFIG</button>';
-    h += '<button class="btn btn-stop" id="btnResetCfg">Reset</button></div>';
+    h+='<div style="display:flex;gap:8px;margin:16px 0">';
+    h+='<button class="btn btn-start" id="btnApplyAll" style="flex:1;font-size:14px;padding:12px">APPLY ALL CONFIG</button>';
+    h+='<button class="btn btn-stop" id="btnResetCfg">Reset</button></div>';
 
     // System Info
-    h += '<div class="card"><h3>System Info</h3><div class="row">';
-    h += '<div class="col"><h4>Version</h4><div class="v">BG-BOT v5</div></div>';
-    h += '<div class="col"><h4>Indicators</h4><div class="v">17 per TF</div></div>';
-    h += '<div class="col"><h4>Active</h4><div class="v" id="cfgDualTF">'+(m1En&&m5En?'M1+M5':m1En?'M1 only':m5En?'M5 only':'NONE')+'</div></div>';
-    h += '<div class="col"><h4>Exchange</h4><div class="v">Bitget</div></div></div></div>';
+    h+='<div class="card"><h3>System Info</h3><div class="row">';
+    h+='<div class="col"><h4>Version</h4><div class="v">BG-BOT v5</div></div>';
+    h+='<div class="col"><h4>Indicators</h4><div class="v">17 per TF</div></div>';
+    h+='<div class="col"><h4>Active</h4><div class="v" id="cfgDualTF">'+(m1En&&m5En?'M1+M5':m1En?'M1 only':m5En?'M5 only':'NONE')+'</div></div>';
+    h+='<div class="col"><h4>Exchange</h4><div class="v">Bitget</div></div></div></div>';
 
-    c.innerHTML = h;
+    c.innerHTML=h;
 
-    // Post-render setup
-    document.getElementById('cfgTradeMode').value = tm;
-    document.getElementById('cfgM1Source').value = m1c.source||'close';
-    document.getElementById('cfgM5Source').value = m5c.source||'close';
+    // Post-render
+    document.getElementById('cfgTradeMode').value=tm;
+    document.getElementById('cfgM1Source').value=m1c.source||'close';
+    document.getElementById('cfgM5Source').value=m5c.source||'close';
     if(bt==='real')document.getElementById('cfgBalReal').checked=true;else document.getElementById('cfgBalDemo').checked=true;
 
-    // TF tab switching
-    document.getElementById('tabM1Cfg').onclick = function(){
-      document.getElementById('m1CfgPanel').style.display='block';
-      document.getElementById('m5CfgPanel').style.display='none';
-      document.getElementById('tabM1Cfg').style.borderBottom='3px solid #00d4aa';
-      document.getElementById('tabM1Cfg').style.background='var(--s2)';
-      document.getElementById('tabM1Cfg').style.color='#00d4aa';
-      document.getElementById('tabM5Cfg').style.borderBottom='3px solid transparent';
-      document.getElementById('tabM5Cfg').style.background='var(--s)';
-      document.getElementById('tabM5Cfg').style.color='var(--t3)';
-    };
-    document.getElementById('tabM5Cfg').onclick = function(){
-      document.getElementById('m1CfgPanel').style.display='none';
-      document.getElementById('m5CfgPanel').style.display='block';
-      document.getElementById('tabM5Cfg').style.borderBottom='3px solid #ff9f43';
-      document.getElementById('tabM5Cfg').style.background='var(--s2)';
-      document.getElementById('tabM5Cfg').style.color='#ff9f43';
-      document.getElementById('tabM1Cfg').style.borderBottom='3px solid transparent';
-      document.getElementById('tabM1Cfg').style.background='var(--s)';
-      document.getElementById('tabM1Cfg').style.color='var(--t3)';
+    document.getElementById('cfgTradeMode').onchange=function(){
+      var pp=this.value==='perpetual'?futPairs:spotPairs;
+      document.getElementById('cfgPair').innerHTML=pp.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
     };
 
-    // Trade mode change
-    document.getElementById('cfgTradeMode').onchange = function(){
-      var pp = this.value==='perpetual'?futPairs:spotPairs;
-      document.getElementById('cfgPair').innerHTML = pp.map(function(p){return '<option value="'+p+'">'+p+'</option>';}).join('');
-    };
-
-    // Dual TF status
+    document.getElementById('cfgM1Enabled').onchange=updTF;
+    document.getElementById('cfgM5Enabled').onchange=updTF;
     function updTF(){
       var m1=document.getElementById('cfgM1Enabled').checked;
       var m5=document.getElementById('cfgM5Enabled').checked;
       var el=document.getElementById('cfgDualTF');
       if(el)el.textContent=m1&&m5?'M1+M5':m1?'M1 only':m5?'M5 only':'NONE';
     }
-    document.getElementById('cfgM1Enabled').onchange=updTF;
-    document.getElementById('cfgM5Enabled').onchange=updTF;
 
-    // Apply all
-    document.getElementById('btnApplyAll').onclick = function(){
-      var full = _cfgBuildPayload();
-      api('POST','/api/config-public',full).then(function(){alert('All Config Saved');renderConfig(document.getElementById('content'));}).catch(function(e){alert('Error: '+e.message);});
+    document.getElementById('btnApplyAll').onclick=function(){
+      api('POST','/api/config-public',_cfgBuild()).then(function(){alert('Saved');renderConfig(document.getElementById('content'));}).catch(function(e){alert('Error: '+e.message);});
     };
-
-    // Reset
-    document.getElementById('btnResetCfg').onclick = function(){
-      if(!confirm('Reset all config?'))return;
+    document.getElementById('btnResetCfg').onclick=function(){
+      if(!confirm('Reset?'))return;
       api('POST','/api/config-public',{pair:'BTCUSDT',mode:'spot',balance_type:'demo',order_size:0.001,tp_percent:0.6,sl_percent:0.3,m1_enabled:true,m5_enabled:false}).then(function(){renderConfig(document.getElementById('content'));});
     };
 
-    // Build full payload
-    function _cfgBuildPayload(){
+    function _cfgBuild(){
       return {
         api_key:document.getElementById('cfgApiKey').value,
         api_secret:document.getElementById('cfgApiSecret').value,
@@ -1883,10 +1830,9 @@ function renderConfig(c){
       };
     }
 
-    // Auto-save
     var _ast=null;
     function autoSave(){if(_ast)clearTimeout(_ast);_ast=setTimeout(function(){
-      api('POST','/api/config-public',_cfgBuildPayload()).then(function(){
+      api('POST','/api/config-public',_cfgBuild()).then(function(){
         var b=document.getElementById('cfgSaveBadge');
         if(b){b.textContent='Saved';b.style.opacity='1';setTimeout(function(){b.textContent='Auto-saved';b.style.opacity='0.3';},1500);}
       }).catch(function(){});
