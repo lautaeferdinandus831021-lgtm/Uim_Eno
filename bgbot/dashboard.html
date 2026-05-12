@@ -1285,6 +1285,8 @@ function _mktInit(){
   api('GET','/api/config-public').then(function(cfg){
     var ci=cfg.chart_indicators||{};
     window._mkt.indConfig=ci;
+    window._mkt.indConfig.m1=ci.m1||{};
+    window._mkt.indConfig.m5=ci.m5||{};
     window._mkt.pair=cfg.pair||'BTCUSDT';
     document.getElementById('mktPair').textContent=window._mkt.pair;
 
@@ -1517,7 +1519,7 @@ function _mktApplyOsc(tf,ciTf){
 // === LIVE UPDATE ===
 function _mktUpdateLive(tf){
   var st=window._mkt[tf];var data=st.candles;if(!data||data.length<5)return;
-  var ci=window._mkt.indConfig[tf]||{};var isOn=function(o){return o&&o.enabled!==false;};
+  var ci=window._mkt.indConfig[tf.toLowerCase()]||{};var isOn=function(o){return o&&o.enabled!==false;};
   if(st.series.ema&&isOn(ci.ema)){var p=ci.ema.period||20;var e=mktCalcEMA(data,p);if(e.length)try{st.series.ema.update(e[e.length-1]);}catch(x){}}
   if(st.series.sma&&isOn(ci.sma)){var p=ci.sma.period||20;var e=mktCalcSMA(data,p);if(e.length)try{st.series.sma.update(e[e.length-1]);}catch(x){}}
   if(st.series.bbU&&isOn(ci.bb)){var p=ci.bb.period||20,sd=ci.bb.std||2;var bb=mktCalcBB(data,p,sd);if(bb.length){var l=bb[bb.length-1];try{st.series.bbU.update({time:l.time,value:l.upper});}catch(x){}try{st.series.bbM.update({time:l.time,value:l.middle});}catch(x){}try{st.series.bbL.update({time:l.time,value:l.lower});}catch(x){}}}
