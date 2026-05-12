@@ -47,6 +47,86 @@ nav a.on{color:var(--t1);background:var(--s2)}
 .auth-box p{color:var(--t3);font-size:11px;text-align:center;margin-bottom:24px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// === AUTH INIT (Bindings) ===
+document.addEventListener("DOMContentLoaded", function() {
+  if (document.getElementById('btnLogin')) {
+    document.getElementById('btnLogin').onclick = function() {
+      document.getElementById('authErr').style.display = 'none';
+      var email = document.getElementById('lEmail').value;
+      var pass = document.getElementById('lPass').value;
+
+      api('POST', '/auth/login', {email: email, password: pass})
+        .then(function(d) {
+          T = d.access_token;
+          U = d.user;
+          localStorage.setItem('bgbot_token', T);
+          localStorage.setItem('bgbot_user', JSON.stringify(U || {}));
+          showDash();
+        })
+        .catch(function(e) {
+          var el = document.getElementById('authErr');
+          el.textContent = e.message;
+          el.style.display = 'block';
+        });
+    };
+  }
+
+  if (document.getElementById('btnReg')) {
+    document.getElementById('btnReg').onclick = function() {
+      var p = document.getElementById('rPass').value;
+      var name = document.getElementById('rName').value;
+      var email = document.getElementById('rEmail').value;
+
+      api('POST', '/auth/register', {name: name, email: email, password: p, confirm: p})
+        .then(function() {
+          showLogin();
+          var el = document.getElementById('authErr');
+          el.textContent = 'Created! Sign in.';
+          el.style.display = 'block';
+          el.style.background = 'rgba(0,212,170,.1)';
+          el.style.borderColor = 'rgba(0,212,170,.3)';
+          el.style.color = 'var(--a)';
+        })
+        .catch(function(e) {
+          var el = document.getElementById('authErr');
+          el.textContent = e.message;
+          el.style.display = 'block';
+        });
+    };
+  }
+
+  if (document.getElementById('linkReg')) {
+    document.getElementById('linkReg').onclick = function(e) {
+      e.preventDefault();
+      document.getElementById('loginF').style.display = 'none';
+      document.getElementById('regF').style.display = 'block';
+      document.getElementById('authErr').style.display = 'none';
+    };
+  }
+
+  if (document.getElementById('linkLogin')) {
+    document.getElementById('linkLogin').onclick = function(e) {
+      e.preventDefault();
+      showLogin();
+    };
+  }
+
+  // Check existing token
+  if (T) {
+    api('GET', '/auth/me').then(function(d) {
+      if (d && d.email) {
+        U = d;
+        showDash();
+      }
+    }).catch(function() {
+      T = null;
+      localStorage.removeItem('bgbot_token');
+    });
+  }
+});
+</script>
+
 <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/technicalindicators@3.1.0/dist/technicalindicators.min.js"></script>
 </head>
