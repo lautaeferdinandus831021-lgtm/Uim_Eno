@@ -1583,6 +1583,8 @@ async def save_config_public(body: dict):
     for k in ["order_size","tp_percent","sl_percent","mode","balance_type","pair","m1_bb_length","m1_bb_std","m1_rsi_length","m1_bb_enabled","m1_macd_enabled","m1_rsi_enabled","m5_bb_length","m5_bb_std","m5_rsi_length","m5_bb_enabled","m5_macd_enabled","m5_rsi_enabled"]:
         if k in body:
             _config_store[k] = body[k]
+    if "chart_indicators" in body:
+        _config_store["chart_indicators"] = body["chart_indicators"]
     _bot_config_cache = {"m1": _config_store["m1"], "m5": _config_store["m5"]}
     try:
         bws.update_params(
