@@ -1372,30 +1372,28 @@ function _mktInitTF(tf,ciTf){
 // === FETCH HISTORY ===
 function _mktFetchHistory(tf,pair,gran,cb){
   var st=window._mkt[tf];
-  fetch('https://api.bitget.com/api/v2/spot/market/candles?symbol='+pair+'&granularity='+gran+'&limit=200')
-    .then(function(r){return r.json();})
+  api('GET','/api/market/candles?symbol='+pair+'&granularity='+gran+'&limit=200')
     .then(function(d){
-      if(d.code==='00000'&&d.data&&d.data.length>0){
-        var raw=d.data.map(function(c){return{time:parseInt(c[0])/1000,open:parseFloat(c[1]),high:parseFloat(c[2]),low:parseFloat(c[3]),close:parseFloat(c[4]),vol:parseFloat(c[5])};}).sort(function(a,b){return a.time-b.time;});
+      if(d.candles&&d.candles.length>0){
+        var raw=d.candles.map(function(c){
+          if(Array.isArray(c))return{time:parseInt(c[0])/1000,open:parseFloat(c[1]),high:parseFloat(c[2]),low:parseFloat(c[3]),close:parseFloat(c[4]),vol:parseFloat(c[5])};
+          return{time:c.timestamp?c.timestamp/1000:c.time,open:c.open,high:c.high,low:c.low,close:c.close,vol:c.volume||c.vol||0};
+        }).sort(function(a,b){return a.time-b.time;});
         var seen={};raw=raw.filter(function(c){if(seen[c.time])return false;seen[c.time]=true;return true;});
         st.candles=raw;
         if(st.series.candle)try{st.series.candle.setData(st.candles);}catch(e){}
         if(cb)cb();
-      }else{_mktFetchViaServer(tf,pair,_gm[tf].px,cb);}
+      }else{
+        console.error(tf+' no candles from server');
+        if(cb)cb();
+      }
     })
-    .catch(function(e){console.error(tf+' fetch:',e);_mktFetchViaServer(tf,pair,_gm[tf].px,cb);});
+    .catch(function(e){console.error(tf+' fetch error:',e);if(cb)cb();});
 }
 
 function _mktFetchViaServer(tf,pair,gran,cb){
-  var st=window._mkt[tf];
-  api('GET','/api/market/candles?symbol='+pair+'&granularity='+gran+'&limit=200')
-    .then(function(d){
-      if(d.candles&&d.candles.length>0){
-        st.candles=d.candles.map(function(c){if(Array.isArray(c))return{time:parseInt(c[0])/1000,open:parseFloat(c[1]),high:parseFloat(c[2]),low:parseFloat(c[3]),close:parseFloat(c[4]),vol:parseFloat(c[5])};return c;}).sort(function(a,b){return a.time-b.time;});
-        if(st.series.candle)try{st.series.candle.setData(st.candles);}catch(e){}
-        if(cb)cb();
-      }
-    }).catch(function(e){console.error(tf+' server:',e);});
+  // Now using server proxy directly
+  if(cb)cb();
 }
 
 // === LOCAL STORAGE CACHE ===

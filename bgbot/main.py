@@ -889,8 +889,7 @@ async def get_indicators(symbol: str = Query("BTCUSDT"), granularity: str = Quer
 async def market_candles(symbol: str = "BTCUSDT", granularity: str = "5m", limit: int = 500):
     """Proxy Bitget candle data for dashboard LWC charts."""
     try:
-        client = BitgetClient()
-        candles = await client.get_klines(symbol, granularity, min(limit, 500))
+        candles = await get_klines_direct(symbol, granularity, min(limit, 500))
         return {"candles": candles if candles else []}
     except Exception as e:
         logger.error(f"Candles error: {e}")
