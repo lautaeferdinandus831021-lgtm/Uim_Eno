@@ -1300,6 +1300,38 @@ function _mktInit(){
     window._mkt.indConfig.m1=ci.m1||{};
     window._mkt.indConfig.m5=ci.m5||{};
     window._mkt.pair=cfg.pair||'BTCUSDT';
+    window._mkt.fullConfig=cfg;
+
+    // Populate config summary bar
+    var _mode=cfg.mode||'spot';
+    var _account=cfg.balance_type||'demo';
+    var _modeEl=document.getElementById('mktCfgMode');
+    if(_modeEl)_modeEl.innerHTML='Mode: <b style="color:'+(_mode==='perpetual'?'#ff6b9d':'#00d4aa')+'">'+_mode.toUpperCase()+'</b>';
+    var _accEl=document.getElementById('mktCfgAccount');
+    if(_accEl)_accEl.innerHTML='Account: <b style="color:'+(_account==='real'?'var(--r)':'var(--a)')+'">'+_account.toUpperCase()+'</b>'+(_account==='real'?' !!!':'');
+
+    var _indNames={ema:'EMA',sma:'SMA',bb:'BB',rsi:'RSI',macd:'MACD',stoch:'STOCH',vwap:'VWAP',sar:'SAR',cmf:'CMF',vol:'VOL',trend:'TREND',pivot:'PIVOT',donchian:'DON',keltner:'KELT',elder:'ELDER',dmi:'DMI',pa:'PA'};
+    var _m1ci=ci.m1||{};var _m1On=[];var _m1Buy=[];var _m1Sell=[];
+    Object.keys(_indNames).forEach(function(k){
+      var cK=_m1ci[k];
+      if(cK&&cK.enabled!==false)_m1On.push(_indNames[k]);
+      if(cK&&cK.buy_enabled)_m1Buy.push(_indNames[k]);
+      if(cK&&cK.sell_enabled)_m1Sell.push(_indNames[k]);
+    });
+    var _e1=document.getElementById('mktCfgM1Inds');if(_e1)_e1.innerHTML='M1 Indicators: <b>'+_m1On.length+'</b> ('+_m1On.join(',')+')';
+    var _e1b=document.getElementById('mktCfgM1Buy');if(_e1b)_e1b.innerHTML='M1 Buy: <b>'+_m1Buy.length+'</b> ('+_m1Buy.join(',')+')';
+    var _e1s=document.getElementById('mktCfgM1Sell');if(_e1s)_e1s.innerHTML='M1 Sell: <b>'+_m1Sell.length+'</b> ('+_m1Sell.join(',')+')';
+
+    var _m5ci=ci.m5||{};var _m5On=[];var _m5Buy=[];var _m5Sell=[];
+    Object.keys(_indNames).forEach(function(k){
+      var cK=_m5ci[k];
+      if(cK&&cK.enabled!==false)_m5On.push(_indNames[k]);
+      if(cK&&cK.buy_enabled)_m5Buy.push(_indNames[k]);
+      if(cK&&cK.sell_enabled)_m5Sell.push(_indNames[k]);
+    });
+    var _e2=document.getElementById('mktCfgM5Inds');if(_e2)_e2.innerHTML='M5 Indicators: <b>'+_m5On.length+'</b> ('+_m5On.join(',')+')';
+    var _e2b=document.getElementById('mktCfgM5Buy');if(_e2b)_e2b.innerHTML='M5 Buy: <b>'+_m5Buy.length+'</b> ('+_m5Buy.join(',')+')';
+    var _e2s=document.getElementById('mktCfgM5Sell');if(_e2s)_e2s.innerHTML='M5 Sell: <b>'+_m5Sell.length+'</b> ('+_m5Sell.join(',')+')';
     document.getElementById('mktPair').textContent=window._mkt.pair;
 
     // Init M1
