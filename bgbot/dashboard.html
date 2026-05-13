@@ -1234,9 +1234,12 @@ function _mktInit(){
     });
     if(cfg.m1_enabled!==false)_mktInitTF("M1",ci.m1||{});
     if(cfg.m5_enabled===true)_mktInitTF("M5",ci.m5||{});
-    // Immediate FP+DOM load for all TFs
+    // IMMEDIATE FP+DOM+CANDLE load (no dependency on chart data)
     ["M1","M5"].forEach(function(tf){
-      setTimeout(function(){_mktLoadFP(tf);_mktLoadDOM(tf);},500);
+      try{_mktLoadFP(tf);}catch(e){console.error("FP init:",e);}
+      try{_mktLoadDOM(tf);}catch(e){console.error("DOM init:",e);}
+      try{_mktUpdateLiveCandle(tf);}catch(e){console.error("LC init:",e);}
+      try{_mktFetchLiveFP(tf);}catch(e){console.error("LFP init:",e);}
     });
 
     _MK.poll=setInterval(function(){
@@ -1653,7 +1656,7 @@ function _mktLoadFP(tf){
       h+='<span>Ratio: <b style="color:'+(ratio>1?"var(--a)":"var(--r)")+'">'+ratio.toFixed(3)+'</b></span></div>';
 
       el.innerHTML=h;
-    }).catch(function(e){if(ld)ld.textContent="Err";});
+    }).catch(function(e){console.error("FP err:",e);if(ld)ld.textContent="Err";el.innerHTML="<div style=\"color:var(--r);padding:10px\">FP Error: "+e.message+"</div>";});
 }
 
 function _mktLoadDOM(tf){
@@ -1731,12 +1734,22 @@ function _mktLoadDOM(tf){
       h+='<span>Levels: <b>'+bids.length+'/'+asks.length+'</b></span></div>';
 
       el.innerHTML=h;
-    }).catch(function(e){if(ld)ld.textContent="Err";});
+    }).catch(function(e){console.error("FP err:",e);if(ld)ld.textContent="Err";el.innerHTML="<div style=\"color:var(--r);padding:10px\">FP Error: "+e.message+"</div>";});
 }
 
 function _mktUpdateLiveCandle(tf){
-  var st=_MK[tf];if(!st||!st.cd||st.cd.length<1)return;
+  var st=_MK[tf];if(!st)return;
   var el=document.getElementById("mk"+tf+"Candle");if(!el)return;
+  var tmEl=document.getElementById("mk"+tf+"CandleTime");if(tmEl)tmEl.textContent=new Date().toLocaleTimeString();
+  if(!st.cd||st.cd.length<1){
+    // No candle data yet - show loading with live price
+    var h='<div style="text-align:center;padding:20px">';
+    h+='<div style="font-size:18px;color:var(--t3)">Loading candle data...</div>';
+    h+='<div style="font-size:10px;color:var(--t3);margin-top:8px">Waiting for '+tf+' WebSocket connection</div>';
+    h+='</div>';
+    el.innerHTML=h;
+    return;
+  }
   var tmEl=document.getElementById("mk"+tf+"CandleTime");if(tmEl)tmEl.textContent=new Date().toLocaleTimeString();
   var data=st.cd;var c=data[data.length-1];if(!c)return;
   var prev=data.length>1?data[data.length-2]:null;
