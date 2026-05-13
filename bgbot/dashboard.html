@@ -1118,6 +1118,13 @@ function mktCalcSAR(data){var out=[];if(!data||data.length<2)return out;var af=0
 function mktCalcVWAP(data){var out=[];if(!data||data.length<1)return out;var cumVP=0,cumV=0;for(var i=0;i<data.length;i++){var tp=(data[i].high+data[i].low+data[i].close)/3;cumVP+=tp*(data[i].vol||1);cumV+=(data[i].vol||1);out.push({time:data[i].time,value:cumVP/cumV});}return out;}
 function mktCalcStoch(data,kPeriod,dPeriod){var out=[];if(!data||data.length<kPeriod)return out;for(var i=kPeriod-1;i<data.length;i++){var hh=-Infinity,ll=Infinity;for(var j=i-kPeriod+1;j<=i;j++){if(data[j].high>hh)hh=data[j].high;if(data[j].low<ll)ll=data[j].low;}var k=hh!==ll?((data[i].close-ll)/(hh-ll))*100:50;if(i>=kPeriod+dPeriod-2){var dSum=0;var cnt=0;for(var m=i-dPeriod+1;m<=i;m++){var hm=-Infinity,lm=Infinity;for(var n=m-kPeriod+1;n<=m;n++){if(data[n].high>hm)hm=data[n].high;if(data[n].low<lm)lm=data[n].low;}var kk=hm!==lm?((data[m].close-lm)/(hm-lm))*100:50;dSum+=kk;cnt++;}out.push({time:data[i].time,k:k,d:dSum/cnt});}}return out;}
 function mktCalcCMF(data,period){var out=[];if(!data||data.length<period)return out;for(var i=period-1;i<data.length;i++){var mfSum=0;var volSum=0;for(var j=i-period+1;j<=i;j++){var d=data[j];var mfm=((d.close-d.low)-(d.high-d.close))/((d.high-d.low)||1);mfSum+=mfm*(d.vol||1);volSum+=(d.vol||1);}out.push({time:data[i].time,value:volSum>0?mfSum/volSum:0});}return out;}
+function mktCalcDonchian(data,period){var out=[];if(!data||data.length<period)return out;for(var i=period-1;i<data.length;i++){var hh=-Infinity,ll=Infinity;for(var j=i-period+1;j<=i;j++){if(data[j].high>hh)hh=data[j].high;if(data[j].low<ll)ll=data[j].low;}out.push({time:data[i].time,upper:hh,lower:ll,middle:(hh+ll)/2});}return out;}
+function mktCalcKeltner(data,period,multiplier){var out=[];if(!data||data.length<period)return out;var ema=mktCalcEMA(data,period);for(var i=0;i<ema.length;i++){var di=-1;for(var j=0;j<data.length;j++){if(data[j].time===ema[i].time){di=j;break;}}if(di<0)continue;var atrSum=0;var cnt=0;for(var j=Math.max(1,di-period+1);j<=di;j++){var tr=Math.max(data[j].high-data[j].low,Math.abs(data[j].high-data[j-1].close),Math.abs(data[j].low-data[j-1].close));atrSum+=tr;cnt++;}var atr=cnt>0?atrSum/cnt:0;out.push({time:ema[i].time,upper:ema[i].value+atr*multiplier,lower:ema[i].value-atr*multiplier,middle:ema[i].value});}return out;}
+function mktCalcTrendlines(data,lookback){var out=[];if(!data||data.length<lookback)return out;for(var i=lookback;i<data.length;i++){var hi=-Infinity,lo=Infinity;for(var j=i-lookback;j<=i;j++){if(data[j].high>hi)hi=data[j].high;if(data[j].low<lo)lo=data[j].low;}out.push({time:data[i].time,resistance:hi,support:lo});}return out;}
+function mktCalcPivot(data){var out=[];if(!data||data.length<2)return out;for(var i=1;i<data.length;i++){var p=(data[i-1].high+data[i-1].low+data[i-1].close)/3;out.push({time:data[i].time,pivot:p,r1:2*p-data[i-1].low,s1:2*p-data[i-1].high,r2:p+(data[i-1].high-data[i-1].low),s2:p-(data[i-1].high-data[i-1].low)});}return out;}
+function mktCalcElderRay(data,period){var out=[];if(!data||data.length<period)return out;var ema=mktCalcEMA(data,period);for(var i=0;i<ema.length;i++){var di=-1;for(var j=0;j<data.length;j++){if(data[j].time===ema[i].time){di=j;break;}}if(di<0)continue;out.push({time:data[di].time,bulls:data[di].high-ema[i].value,bears:data[di].low-ema[i].value});}return out;}
+function mktCalcDMI(data,period){var out=[];if(!data||data.length<period+1)return out;var pdmArr=[],mdmArr=[],trArr=[];for(var i=1;i<data.length;i++){var pDM=data[i].high-data[i-1].high;var mDM=data[i-1].low-data[i].low;pdmArr.push(pDM>mDM&&pDM>0?pDM:0);mdmArr.push(mDM>pDM&&mDM>0?mDM:0);var tr=Math.max(data[i].high-data[i].low,Math.abs(data[i].high-data[i-1].close),Math.abs(data[i].low-data[i-1].close));trArr.push(tr);}var pdmS=0,mdmS=0,trS=0;for(var i=0;i<period;i++){pdmS+=pdmArr[i];mdmS+=mdmArr[i];trS+=trArr[i];}for(var i=period;i<pdmArr.length;i++){pdmS=pdmS-pdmS/period+pdmArr[i];mdmS=mdmS-mdmS/period+mdmArr[i];trS=trS-trS/period+trArr[i];var pdi=trS>0?(pdmS/trS)*100:0;var mdi=trS>0?(mdmS/trS)*100:0;var dx=(pdi+mdi)>0?(Math.abs(pdi-mdi)/(pdi+mdi))*100:0;out.push({time:data[i+1].time,pdi:pdi,mdi:mdi,adx:dx});}return out;}
+function mktDetectPatterns(data){var out=[];if(!data||data.length<3)return out;for(var i=2;i<data.length;i++){var c=data[i],p1=data[i-1],p2=data[i-2];var body=Math.abs(c.close-c.open);var range=c.high-c.low;var upperW=c.close>=c.open?c.high-c.close:c.high-c.open;var lowerW=c.close>=c.open?c.open-c.low:c.close-c.low;if(range>0&&lowerW>body*2&&upperW<body*0.3&&c.close>c.open)out.push({time:c.time,pattern:"hammer"});if(range>0&&upperW>body*2&&lowerW<body*0.3&&c.close<c.open)out.push({time:c.time,pattern:"shooting_star"});if(p1.close>p1.open&&c.close<c.open&&c.close<p1.open&&c.open>p1.close)out.push({time:c.time,pattern:"bearish_engulf"});if(p1.close<p1.open&&c.close>c.open&&c.close>p1.open&&c.open<p1.close)out.push({time:c.time,pattern:"bullish_engulf"});}return out;}
 
 var _MK={aTF:"M1",pair:"BTCUSDT",ci:{},poll:null,
   M1:{ch:null,ser:{},oc:null,ocs:{},cd:[],ws:null,wok:false,wry:0,wrt:null,_fpOvl:null,_liveFP:null,_fpInt:null},
@@ -1284,10 +1291,10 @@ function _mktInitTF(tf,ciTf){
   }catch(e){console.error(tf+" osc:",e);}
   _mktFetch(tf,pair,gm.r,function(){
     try{localStorage.setItem("mk_"+tf,JSON.stringify(st.cd.slice(-200)));}catch(e){}
-    _mktApplyAll(tf,ciTf);_mktWS(tf,pair,gm.w);
+    try{_mktApplyAll(tf,ciTf);}catch(e){console.warn("ApplyAll error:",e);}
+    _mktWS(tf,pair,gm.w);
     _mktLoadFP(tf);_mktLoadDOM(tf);
     _mktFetchLiveFP(tf);
-    // Realtime refresh: DOM every 3s, FP every 5s
     setInterval(function(){_mktLoadDOM(tf);},500);
     setInterval(function(){_mktLoadFP(tf);},500);
   });
@@ -1473,7 +1480,7 @@ function _mktOvl(tf,ciTf){
   if(on(ciTf.sar)){var s=st.ch.addLineSeries({color:"#ff6b9d",lineWidth:1,pointSize:2,title:"SAR",priceLineVisible:false,lastValueVisible:false});s.setData(mktCalcSAR(data));st.ser.sar=s;}
   if(on(ciTf.vwap)){var s=st.ch.addLineSeries({color:"#00bcd4",lineWidth:1.5,title:"VWAP",priceLineVisible:false,lastValueVisible:false});s.setData(mktCalcVWAP(data));st.ser.vwap=s;}
   if(on(ciTf.vol)){var vd=data.map(function(d){return{time:d.time,value:d.vol,color:d.close>=d.open?"rgba(38,166,154,0.4)":"rgba(239,83,80,0.4)"};});var vs=st.ch.addHistogramSeries({priceFormat:{type:"volume"},priceScaleId:"vol",lastValueVisible:false,priceLineVisible:false});st.ch.priceScale("vol").applyOptions({scaleMargins:{top:0.85,bottom:0}});vs.setData(vd);st.ser.vol=vs;}
-  if(on(ciTf.donchian)){var p=ciTf.donchian.period||20;var dc=mktCalcDonchian(data,p);if(dc.length){st.ser.donU=st.ch.addLineSeries({color:"#00bcd4",lineWidth:1,title:"Donchian",priceLineVisible:false,lastValueVisible:false});st.ser.donU.setData(dc.map(function(d){return{time:d.time,value:d.upper};}));st.ser.donL=st.ch.addLineSeries({color:"#00bcd4",lineWidth:1,priceLineVisible:false,lastValueVisible:false});st.ser.donL.setData(dc.map(function(d){return{time:d.time,value:d.lower};}));}}
+  try{if(on(ciTf.donchian)){var p=ciTf.donchian.period||20;var dc=mktCalcDonchian(data,p);if(dc.length){st.ser.donU=st.ch.addLineSeries({color:"#00bcd4",lineWidth:1,title:"Donchian",priceLineVisible:false,lastValueVisible:false});st.ser.donU.setData(dc.map(function(d){return{time:d.time,value:d.upper};}));st.ser.donL=st.ch.addLineSeries({color:"#00bcd4",lineWidth:1,priceLineVisible:false,lastValueVisible:false});st.ser.donL.setData(dc.map(function(d){return{time:d.time,value:d.lower};}));}}}catch(e){console.warn('Donchian:',e);}
   if(on(ciTf.keltner)){var p=ciTf.keltner.period||20,m=ciTf.keltner.multiplier||2;var kl=mktCalcKeltner(data,p,m);if(kl.length){st.ser.kelU=st.ch.addLineSeries({color:"#8bc34a",lineWidth:1,title:"Keltner",priceLineVisible:false,lastValueVisible:false});st.ser.kelU.setData(kl.map(function(d){return{time:d.time,value:d.upper};}));st.ser.kelL=st.ch.addLineSeries({color:"#8bc34a",lineWidth:1,priceLineVisible:false,lastValueVisible:false});st.ser.kelL.setData(kl.map(function(d){return{time:d.time,value:d.lower};}));}}
   if(on(ciTf.trend)){var p=ciTf.trend.lookback||50;var tl=mktCalcTrendlines(data,p);if(tl.length){st.ser.trR=st.ch.addLineSeries({color:"#ff9800",lineWidth:1,lineStyle:2,title:"Resistance",priceLineVisible:false,lastValueVisible:false});st.ser.trR.setData(tl.map(function(d){return{time:d.time,value:d.resistance};}));st.ser.trS=st.ch.addLineSeries({color:"#ff9800",lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});st.ser.trS.setData(tl.map(function(d){return{time:d.time,value:d.support};}));}}
   if(on(ciTf.pivot)){var pv=mktCalcPivot(data);if(pv.length){st.ser.pvP=st.ch.addLineSeries({color:"#9c27b0",lineWidth:1,title:"Pivot",priceLineVisible:false,lastValueVisible:false});st.ser.pvP.setData(pv.map(function(d){return{time:d.time,value:d.pivot};}));st.ser.pvR1=st.ch.addLineSeries({color:"rgba(156,39,176,0.4)",lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});st.ser.pvR1.setData(pv.map(function(d){return{time:d.time,value:d.r1};}));st.ser.pvS1=st.ch.addLineSeries({color:"rgba(156,39,176,0.4)",lineWidth:1,lineStyle:2,priceLineVisible:false,lastValueVisible:false});st.ser.pvS1.setData(pv.map(function(d){return{time:d.time,value:d.s1};}));}}
@@ -1742,7 +1749,6 @@ function _mktUpdateLiveCandle(tf){
   var el=document.getElementById("mk"+tf+"Candle");if(!el)return;
   var tmEl=document.getElementById("mk"+tf+"CandleTime");if(tmEl)tmEl.textContent=new Date().toLocaleTimeString();
   if(!st.cd||st.cd.length<1){
-    // No candle data yet - show loading with live price
     var h='<div style="text-align:center;padding:20px">';
     h+='<div style="font-size:18px;color:var(--t3)">Loading candle data...</div>';
     h+='<div style="font-size:10px;color:var(--t3);margin-top:8px">Waiting for '+tf+' WebSocket connection</div>';
@@ -1750,7 +1756,6 @@ function _mktUpdateLiveCandle(tf){
     el.innerHTML=h;
     return;
   }
-  var tmEl=document.getElementById("mk"+tf+"CandleTime");if(tmEl)tmEl.textContent=new Date().toLocaleTimeString();
   var data=st.cd;var c=data[data.length-1];if(!c)return;
   var prev=data.length>1?data[data.length-2]:null;
   var chg=prev?(c.close-prev.close):0;
