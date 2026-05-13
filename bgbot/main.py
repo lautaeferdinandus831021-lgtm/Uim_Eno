@@ -208,7 +208,64 @@ bot_running = False
 bot_trades_log = []
 
 # Config storage
-_config_store = {"api_key": "", "api_secret": "", "api_passphrase": "", "m1": {"fast": 4, "slow": 5, "signal": 3, "source": "close"}, "m5": {"fast": 4, "slow": 5, "signal": 3, "source": "close"}, "m1_bb_length": 6, "m1_bb_std": 1.2, "m1_rsi_length": 6, "m1_bb_enabled": True, "m1_macd_enabled": True, "m1_rsi_enabled": True, "m5_bb_length": 6, "m5_bb_std": 1.2, "m5_rsi_length": 6, "m5_bb_enabled": True, "m5_macd_enabled": True, "m5_rsi_enabled": True, "pair": "BTCUSDT", "order_size": 0.001, "tp_percent": 0.6, "sl_percent": 0.3, "mode": "spot", "balance_type": "demo"}
+_default_chart_indicators = {
+    "m1": {
+        "ema": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_above", "sell_rule": "cross_below"},
+        "sma": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_above", "sell_rule": "cross_below"},
+        "bb": {"enabled": True, "period": 20, "std": 2.0, "buy_enabled": False, "sell_enabled": False, "buy_rule": "at_lower", "sell_rule": "at_upper"},
+        "rsi": {"enabled": True, "period": 14, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_below", "buy_below": 30, "sell_rule": "cross_above", "sell_above": 70},
+        "macd": {"enabled": True, "fast": 12, "slow": 26, "signal": 9, "buy_enabled": False, "sell_enabled": False, "buy_rule": "hist_pos", "sell_rule": "hist_neg"},
+        "stoch": {"enabled": True, "k_period": 14, "d_period": 3, "buy_enabled": False, "sell_enabled": False, "buy_rule": "kd_cross_up", "buy_below": 20, "sell_rule": "kd_cross_down", "sell_above": 80},
+        "vwap": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_above", "sell_rule": "cross_below"},
+        "sar": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "flip_below", "sell_rule": "flip_above"},
+        "cmf": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_zero_up", "sell_rule": "cross_zero_down"},
+        "vol": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "above_avg", "sell_rule": "below_avg"},
+        "trend": {"enabled": True, "lookback": 50, "buy_enabled": False, "sell_enabled": False, "buy_rule": "support_bounce", "sell_rule": "resistance_bounce"},
+        "pivot": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "above_pivot", "sell_rule": "below_pivot"},
+        "donchian": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "break_upper", "sell_rule": "break_lower"},
+        "keltner": {"enabled": True, "period": 20, "multiplier": 2, "buy_enabled": False, "sell_enabled": False, "buy_rule": "bounce_lower", "sell_rule": "bounce_upper"},
+        "elder": {"enabled": True, "period": 13, "buy_enabled": False, "sell_enabled": False, "buy_rule": "bulls_pos", "sell_rule": "bears_neg"},
+        "dmi": {"enabled": True, "period": 14, "buy_enabled": False, "sell_enabled": False, "buy_rule": "plus_di_above", "sell_rule": "minus_di_above"},
+        "pa": {"enabled": True, "lookback": 5, "buy_enabled": False, "sell_enabled": False, "buy_rule": "hammer", "sell_rule": "shooting_star"},
+        "min_buy_confirm": 2,
+        "min_sell_confirm": 2
+    },
+    "m5": {
+        "ema": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_above", "sell_rule": "cross_below"},
+        "sma": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_above", "sell_rule": "cross_below"},
+        "bb": {"enabled": True, "period": 20, "std": 2.0, "buy_enabled": False, "sell_enabled": False, "buy_rule": "at_lower", "sell_rule": "at_upper"},
+        "rsi": {"enabled": True, "period": 14, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_below", "buy_below": 30, "sell_rule": "cross_above", "sell_above": 70},
+        "macd": {"enabled": True, "fast": 12, "slow": 26, "signal": 9, "buy_enabled": False, "sell_enabled": False, "buy_rule": "hist_pos", "sell_rule": "hist_neg"},
+        "stoch": {"enabled": True, "k_period": 14, "d_period": 3, "buy_enabled": False, "sell_enabled": False, "buy_rule": "kd_cross_up", "buy_below": 20, "sell_rule": "kd_cross_down", "sell_above": 80},
+        "vwap": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_above", "sell_rule": "cross_below"},
+        "sar": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "flip_below", "sell_rule": "flip_above"},
+        "cmf": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "cross_zero_up", "sell_rule": "cross_zero_down"},
+        "vol": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "above_avg", "sell_rule": "below_avg"},
+        "trend": {"enabled": True, "lookback": 50, "buy_enabled": False, "sell_enabled": False, "buy_rule": "support_bounce", "sell_rule": "resistance_bounce"},
+        "pivot": {"enabled": True, "buy_enabled": False, "sell_enabled": False, "buy_rule": "above_pivot", "sell_rule": "below_pivot"},
+        "donchian": {"enabled": True, "period": 20, "buy_enabled": False, "sell_enabled": False, "buy_rule": "break_upper", "sell_rule": "break_lower"},
+        "keltner": {"enabled": True, "period": 20, "multiplier": 2, "buy_enabled": False, "sell_enabled": False, "buy_rule": "bounce_lower", "sell_rule": "bounce_upper"},
+        "elder": {"enabled": True, "period": 13, "buy_enabled": False, "sell_enabled": False, "buy_rule": "bulls_pos", "sell_rule": "bears_neg"},
+        "dmi": {"enabled": True, "period": 14, "buy_enabled": False, "sell_enabled": False, "buy_rule": "plus_di_above", "sell_rule": "minus_di_above"},
+        "pa": {"enabled": True, "lookback": 5, "buy_enabled": False, "sell_enabled": False, "buy_rule": "hammer", "sell_rule": "shooting_star"},
+        "min_buy_confirm": 2,
+        "min_sell_confirm": 2
+    }
+}
+
+_config_store = {
+    "api_key": "", "api_secret": "", "api_passphrase": "",
+    "m1": {"fast": 4, "slow": 5, "signal": 3, "source": "close"},
+    "m5": {"fast": 4, "slow": 5, "signal": 3, "source": "close"},
+    "m1_bb_length": 6, "m1_bb_std": 1.2, "m1_rsi_length": 6,
+    "m1_bb_enabled": True, "m1_macd_enabled": True, "m1_rsi_enabled": True,
+    "m5_bb_length": 6, "m5_bb_std": 1.2, "m5_rsi_length": 6,
+    "m5_bb_enabled": True, "m5_macd_enabled": True, "m5_rsi_enabled": True,
+    "pair": "BTCUSDT", "order_size": 0.001, "tp_percent": 0.6, "sl_percent": 0.3,
+    "mode": "spot", "balance_type": "demo",
+    "m1_enabled": True, "m5_enabled": True,
+    "chart_indicators": _default_chart_indicators
+}
 bot_initial_balance = 10000.0
 bot_realized_pnl = 0.0
 
