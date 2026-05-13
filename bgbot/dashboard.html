@@ -1583,88 +1583,145 @@ function _mktEval(tf,ciTf){
 
 function _mktLoadFP(tf){
   var el=document.getElementById("mk"+tf+"FP");if(!el)return;
-  var ld=document.getElementById("mk"+tf+"FPLoading");if(ld)ld.textContent="Loading...";
-  api("GET","/api/market/footprint?symbol="+_MK.pair+"&bins=20")
+  var ld=document.getElementById("mk"+tf+"FPLoading");if(ld)ld.textContent="...";
+  api("GET","/api/market/footprint?symbol="+_MK.pair+"&bins=25")
     .then(function(d){
-      if(ld)ld.textContent="Live "+new Date().toLocaleTimeString();
+      if(ld)ld.textContent=new Date().toLocaleTimeString();
       var p=d.profile||[];
-      if(!p.length){el.innerHTML='<div style="color:var(--t3);padding:20px">No data</div>';return;}
-      var poc=d.poc||0;var maxVol=0;p.forEach(function(b){var t=(b.bid_vol||0)+(b.ask_vol||0);if(t>maxVol)maxVol=t;});
+      if(!p.length){el.innerHTML='<div style="color:var(--t3);padding:20px">No footprint data</div>';return;}
+      var poc=d.poc||0;
+      var maxVol=0;p.forEach(function(b){var t=(b.bid_vol||0)+(b.ask_vol||0);if(t>maxVol)maxVol=t;});
       var bidT=d.bid_vol||0;var askT=d.ask_vol||0;var delta=d.delta||0;var imb=d.imbalance||0;
-      var h='<div style="margin-bottom:6px;display:flex;gap:10px;font-size:10px;flex-wrap:wrap">';
-      h+='<span style="color:#e8c547">POC: <b>'+parseFloat(poc).toFixed(2)+'</b></span>';
-      h+='<span style="color:var(--a)">Bid: <b>'+bidT.toFixed(2)+'</b></span>';
-      h+='<span style="color:var(--r)">Ask: <b>'+askT.toFixed(2)+'</b></span>';
-      h+='<span style="color:'+(delta>=0?"var(--a)":"var(--r)")+'">Delta: <b>'+delta.toFixed(2)+'</b></span>';
-      h+='<span style="color:#00bcd4">Imb: <b>'+imb.toFixed(2)+'</b></span></div>';
+      var totalVol=bidT+askT;var bidPct=totalVol>0?(bidT/totalVol*100):50;var askPct=100-bidPct;
+      var pressure=bidT>askT?"BUY":"SELL";var pressColor=bidT>askT?"var(--a)":"var(--r)";
+      var ratio=askT>0?(bidT/askT):0;
+
+      var h='';
+      // Summary cards row
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:6px">';
+      h+='<div style="background:rgba(232,197,71,0.1);border:1px solid rgba(232,197,71,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
+      h+='<div style="font-size:8px;color:var(--t3)">POC</div><div style="font-size:13px;font-weight:bold;color:#e8c547">'+parseFloat(poc).toFixed(2)+'</div></div>';
+      h+='<div style="background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
+      h+='<div style="font-size:8px;color:var(--t3)">DELTA</div><div style="font-size:13px;font-weight:bold;color:'+(delta>=0?"var(--a)":"var(--r)")+'">'+(delta>=0?"+":"")+delta.toFixed(3)+'</div></div>';
+      h+='<div style="background:rgba(0,188,212,0.08);border:1px solid rgba(0,188,212,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
+      h+='<div style="font-size:8px;color:var(--t3)">CVD</div><div style="font-size:13px;font-weight:bold;color:#00bcd4">'+(delta>=0?"+":"")+delta.toFixed(3)+'</div></div>';
+      h+='</div>';
+
+      // Volume pressure bar
+      h+='<div style="margin-bottom:6px;border-radius:4px;overflow:hidden;height:12px;display:flex">';
+      h+='<div style="width:'+bidPct+'%;background:linear-gradient(90deg,rgba(38,166,154,0.6),rgba(38,166,154,0.3));display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">'+bidPct.toFixed(0)+'%</div>';
+      h+='<div style="width:'+askPct+'%;background:linear-gradient(90deg,rgba(239,83,80,0.3),rgba(239,83,80,0.6));display:flex;align-items:center;justify-content:center;font-size:8px;color:#fff;font-weight:bold">'+askPct.toFixed(0)+'%</div></div>';
+
+      // Pressure indicator
+      h+='<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:4px">';
+      h+='<span style="color:var(--a)">Bid Vol: <b>'+bidT.toFixed(3)+'</b></span>';
+      h+='<span style="color:'+pressColor+';font-weight:bold">'+pressure+' PRESSURE</span>';
+      h+='<span style="color:var(--r)">Ask Vol: <b>'+askT.toFixed(3)+'</b></span></div>';
+
+      // Profile bars
       h+='<div style="font-size:10px">';
       p.forEach(function(b){
         var price=parseFloat(b.price);var bv=b.bid_vol||0;var av=b.ask_vol||0;var bd=b.delta||0;var tot=bv+av;
         var pct=maxVol>0?(tot/maxVol*100):0;var bidP=tot>0?(bv/tot*100):50;
         var isPoc=Math.abs(price-poc)<0.5;
-        h+='<div style="display:flex;align-items:center;padding:1px 0;position:relative;border-radius:2px;'+(isPoc?"background:rgba(232,197,71,0.12);border:1px solid rgba(232,197,71,0.3)":"")+'">';
-        h+='<div style="position:absolute;left:0;top:0;bottom:0;width:'+(bidP*pct/100)+'%;background:rgba(38,166,154,0.2)"></div>';
-        h+='<div style="position:absolute;right:0;top:0;bottom:0;width:'+((100-bidP)*pct/100)+'%;background:rgba(239,83,80,0.2)"></div>';
-        h+='<span style="width:80px;font-weight:'+(isPoc?"bold":"normal")+';color:'+(isPoc?"#e8c547":"var(--t1)")+';z-index:1;text-align:right;padding-right:4px">'+price.toFixed(2)+'</span>';
-        h+='<span style="width:50px;text-align:right;color:var(--a);z-index:1">'+bv.toFixed(2)+'</span>';
-        h+='<span style="width:50px;text-align:right;color:var(--r);z-index:1">'+av.toFixed(2)+'</span>';
-        h+='<span style="width:60px;text-align:right;font-weight:bold;color:'+(bd>=0?"var(--a)":"var(--r)")+';z-index:1">'+(bd>=0?"+":"")+bd.toFixed(2)+'</span>';
-        h+='<span style="flex:1;text-align:right;font-size:9px;color:var(--t3);z-index:1">'+pct.toFixed(0)+'%</span></div>';
+        h+='<div style="display:flex;align-items:center;padding:1px 0;position:relative;border-radius:2px;'+(isPoc?"background:rgba(232,197,71,0.15);border:1px solid rgba(232,197,71,0.3)":"")+'">';
+        h+='<div style="position:absolute;left:0;top:0;bottom:0;width:'+(bidP*pct/100)+'%;background:rgba(38,166,154,0.25)"></div>';
+        h+='<div style="position:absolute;right:0;top:0;bottom:0;width:'+((100-bidP)*pct/100)+'%;background:rgba(239,83,80,0.25)"></div>';
+        h+='<span style="width:74px;font-weight:'+(isPoc?"bold":"normal")+';color:'+(isPoc?"#e8c547":"var(--t1)")+';z-index:1;text-align:right;padding-right:3px">'+price.toFixed(2)+'</span>';
+        h+='<span style="width:44px;text-align:right;color:var(--a);z-index:1">'+bv.toFixed(2)+'</span>';
+        h+='<span style="width:44px;text-align:right;color:var(--r);z-index:1">'+av.toFixed(2)+'</span>';
+        h+='<span style="width:52px;text-align:right;font-weight:bold;color:'+(bd>=0?"var(--a)":"var(--r)")+';z-index:1">'+(bd>=0?"+":"")+bd.toFixed(2)+'</span>';
+        h+='<span style="flex:1;text-align:right;font-size:8px;color:var(--t3);z-index:1">'+pct.toFixed(0)+'%</span></div>';
       });
       h+='</div>';
-      h+='<div style="margin-top:6px;padding:4px 8px;background:var(--s2);border-radius:4px;font-size:10px;display:flex;gap:14px;flex-wrap:wrap">';
-      h+='<span>CVD: <b style="color:'+(delta>=0?"var(--a)":"var(--r)")+'">'+delta.toFixed(2)+'</b></span>';
-      h+='<span>HVA: <b>'+parseFloat(d.hva_low||0).toFixed(2)+" - "+parseFloat(d.hva_high||0).toFixed(2)+'</b></span></div>';
+
+      // Bottom summary
+      h+='<div style="margin-top:4px;padding:4px 6px;background:var(--s2);border-radius:4px;font-size:9px;display:flex;gap:10px;flex-wrap:wrap">';
+      h+='<span>Imbalance: <b style="color:#00bcd4">'+imb.toFixed(3)+'</b></span>';
+      h+='<span>HVA: <b>'+parseFloat(d.hva_low||0).toFixed(2)+"-"+parseFloat(d.hva_high||0).toFixed(2)+'</b></span>';
+      h+='<span>Range: <b>'+parseFloat(d.price_min||0).toFixed(2)+"-"+parseFloat(d.price_max||0).toFixed(2)+'</b></span>';
+      h+='<span>Ratio: <b style="color:'+(ratio>1?"var(--a)":"var(--r)")+'">'+ratio.toFixed(3)+'</b></span></div>';
+
       el.innerHTML=h;
-    }).catch(function(e){if(ld)ld.textContent="Error";});
+    }).catch(function(e){if(ld)ld.textContent="Err";});
 }
 
 function _mktLoadDOM(tf){
   var el=document.getElementById("mk"+tf+"DOM");if(!el)return;
-  var ld=document.getElementById("mk"+tf+"DOMLoading");if(ld)ld.textContent="Loading...";
+  var ld=document.getElementById("mk"+tf+"DOMLoading");if(ld)ld.textContent="...";
   api("GET","/api/market/orderbook?symbol="+_MK.pair+"&limit=20")
     .then(function(d){
-      if(ld)ld.textContent="Live "+new Date().toLocaleTimeString();
+      if(ld)ld.textContent=new Date().toLocaleTimeString();
       var bids=d.bids||[];var asks=d.asks||[];
       if(!bids.length&&!asks.length){el.innerHTML='<div style="color:var(--t3);padding:20px">No data</div>';return;}
       var maxVol=0;bids.concat(asks).forEach(function(r){var v=parseFloat(r[1])||0;if(v>maxVol)maxVol=v;});
       var tBid=0,tAsk=0;bids.forEach(function(b){tBid+=parseFloat(b[1])||0;});asks.forEach(function(a){tAsk+=parseFloat(a[1])||0;});
-      var h='<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);padding:2px 0;border-bottom:1px solid var(--b);margin-bottom:2px"><span style="width:80px">Price</span><span style="width:70px;text-align:right">Size</span><span style="width:70px;text-align:right">Total</span></div>';
-      var showAsks=asks.slice(0,15).reverse();
+      var totalVol=tBid+tAsk;var bidPct=totalVol>0?(tBid/totalVol*100):50;var askPct=100-bidPct;
+      var ratio=tAsk>0?(tBid/tAsk):0;var pressure=tBid>tAsk?"BUY":"SELL";
+
+      var h='';
+      // Summary cards
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:6px">';
+      h+='<div style="background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
+      h+='<div style="font-size:8px;color:var(--t3)">BID VOL</div><div style="font-size:12px;font-weight:bold;color:var(--a)">'+tBid.toFixed(3)+'</div></div>';
+      h+='<div style="background:rgba(232,197,71,0.08);border:1px solid rgba(232,197,71,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
+      h+='<div style="font-size:8px;color:var(--t3)">RATIO</div><div style="font-size:12px;font-weight:bold;color:'+(ratio>1?"var(--a)":"var(--r)")+'">'+ratio.toFixed(3)+'</div></div>';
+      h+='<div style="background:rgba(239,83,80,0.08);border:1px solid rgba(239,83,80,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
+      h+='<div style="font-size:8px;color:var(--t3)">ASK VOL</div><div style="font-size:12px;font-weight:bold;color:var(--r)">'+tAsk.toFixed(3)+'</div></div>';
+      h+='</div>';
+
+      // Pressure bar
+      h+='<div style="margin-bottom:4px;border-radius:4px;overflow:hidden;height:10px;display:flex">';
+      h+='<div style="width:'+bidPct+'%;background:linear-gradient(90deg,rgba(38,166,154,0.6),rgba(38,166,154,0.3));display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff">'+bidPct.toFixed(0)+'%</div>';
+      h+='<div style="width:'+askPct+'%;background:linear-gradient(90deg,rgba(239,83,80,0.3),rgba(239,83,80,0.6));display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff">'+askPct.toFixed(0)+'%</div></div>';
+
+      // Column headers
+      h+='<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--t3);padding:2px 0;border-bottom:1px solid var(--b);margin-bottom:1px"><span style="width:74px">Price</span><span style="width:50px;text-align:right">Size</span><span style="width:50px;text-align:right">Cum</span><span style="width:40px;text-align:right">%</span></div>';
+
+      // Asks
+      var showAsks=asks.slice(0,12).reverse();
       var askTotals=[];var cum=0;
-      for(var i=asks.length-1;i>=0&&i>=asks.length-15;i--){cum+=parseFloat(asks[i][1])||0;askTotals.unshift(cum);}
+      for(var i=asks.length-1;i>=0&&i>=asks.length-12;i--){cum+=parseFloat(asks[i][1])||0;askTotals.unshift(cum);}
       showAsks.forEach(function(a,idx){
         var p=parseFloat(a[0]);var v=parseFloat(a[1]);var pct=maxVol>0?(v/maxVol*100):0;var cv=askTotals[idx]||0;
         h+='<div style="display:flex;align-items:center;padding:1px 0;position:relative">';
-        h+='<div style="position:absolute;right:0;top:0;bottom:0;width:'+pct+'%;background:rgba(239,83,80,0.18)"></div>';
-        h+='<span style="width:80px;color:var(--r);font-weight:bold;z-index:1;font-size:11px">'+p.toFixed(2)+'</span>';
-        h+='<span style="width:70px;text-align:right;color:var(--r);z-index:1;font-size:10px">'+v.toFixed(4)+'</span>';
-        h+='<span style="width:70px;text-align:right;color:rgba(239,83,80,0.5);z-index:1;font-size:10px">'+cv.toFixed(4)+'</span></div>';
+        h+='<div style="position:absolute;right:0;top:0;bottom:0;width:'+pct+'%;background:rgba(239,83,80,0.2)"></div>';
+        h+='<span style="width:74px;color:var(--r);font-weight:bold;z-index:1;font-size:10px">'+p.toFixed(2)+'</span>';
+        h+='<span style="width:50px;text-align:right;color:var(--r);z-index:1;font-size:9px">'+v.toFixed(4)+'</span>';
+        h+='<span style="width:50px;text-align:right;color:rgba(239,83,80,0.4);z-index:1;font-size:9px">'+cv.toFixed(3)+'</span>';
+        h+='<span style="width:40px;text-align:right;color:var(--t3);z-index:1;font-size:8px">'+pct.toFixed(0)+'%</span></div>';
       });
+
+      // Spread
       if(bids.length&&asks.length){
         var bb=parseFloat(bids[0][0]);var ba=parseFloat(asks[0][0]);var sp=ba-bb;var spP=(sp/ba*100);
-        h+='<div style="text-align:center;padding:4px;background:rgba(232,197,71,0.08);border-top:1px solid rgba(232,197,71,0.2);border-bottom:1px solid rgba(232,197,71,0.2);font-size:10px">';
+        h+='<div style="text-align:center;padding:3px;background:rgba(232,197,71,0.1);border:1px solid rgba(232,197,71,0.2);border-radius:3px;font-size:9px;margin:2px 0">';
         h+='<span style="color:#e8c547;font-weight:bold">'+bb.toFixed(2)+'</span>';
-        h+='<span style="color:var(--t3);margin:0 8px">SPREAD: '+sp.toFixed(2)+' ('+spP.toFixed(4)+'%)</span>';
+        h+='<span style="color:var(--t3);margin:0 6px">SPREAD '+sp.toFixed(2)+' ('+spP.toFixed(4)+'%)</span>';
         h+='<span style="color:#e8c547;font-weight:bold">'+ba.toFixed(2)+'</span></div>';
       }
+
+      // Bids
       var bidCum=0;
-      bids.slice(0,15).forEach(function(b){
+      bids.slice(0,12).forEach(function(b){
         var p=parseFloat(b[0]);var v=parseFloat(b[1]);bidCum+=v;var pct=maxVol>0?(v/maxVol*100):0;
         h+='<div style="display:flex;align-items:center;padding:1px 0;position:relative">';
-        h+='<div style="position:absolute;right:0;top:0;bottom:0;width:'+pct+'%;background:rgba(38,166,154,0.18)"></div>';
-        h+='<span style="width:80px;color:var(--a);font-weight:bold;z-index:1;font-size:11px">'+p.toFixed(2)+'</span>';
-        h+='<span style="width:70px;text-align:right;color:var(--a);z-index:1;font-size:10px">'+v.toFixed(4)+'</span>';
-        h+='<span style="width:70px;text-align:right;color:rgba(38,166,154,0.5);z-index:1;font-size:10px">'+bidCum.toFixed(4)+'</span></div>';
+        h+='<div style="position:absolute;right:0;top:0;bottom:0;width:'+pct+'%;background:rgba(38,166,154,0.2)"></div>';
+        h+='<span style="width:74px;color:var(--a);font-weight:bold;z-index:1;font-size:10px">'+p.toFixed(2)+'</span>';
+        h+='<span style="width:50px;text-align:right;color:var(--a);z-index:1;font-size:9px">'+v.toFixed(4)+'</span>';
+        h+='<span style="width:50px;text-align:right;color:rgba(38,166,154,0.4);z-index:1;font-size:9px">'+bidCum.toFixed(3)+'</span>';
+        h+='<span style="width:40px;text-align:right;color:var(--t3);z-index:1;font-size:8px">'+pct.toFixed(0)+'%</span></div>';
       });
-      h+='<div style="margin-top:6px;padding:4px 8px;background:var(--s2);border-radius:4px;font-size:10px;display:flex;gap:14px;flex-wrap:wrap">';
-      h+='<span style="color:var(--a)">Bid: <b>'+tBid.toFixed(4)+'</b></span>';
-      h+='<span style="color:var(--r)">Ask: <b>'+tAsk.toFixed(4)+'</b></span>';
-      var ratio=tAsk>0?(tBid/tAsk):0;
-      h+='<span>Ratio: <b style="color:'+(ratio>1?"var(--a)":"var(--r)")+'">'+ratio.toFixed(2)+'</b></span>';
-      h+='<span style="color:'+(tBid>tAsk?"var(--a)":"var(--r)")+';font-weight:bold">'+(tBid>tAsk?"BUY PRESSURE":"SELL PRESSURE")+'</span></div>';
+
+      // Bottom summary
+      h+='<div style="margin-top:4px;padding:4px 6px;background:var(--s2);border-radius:4px;font-size:9px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">';
+      h+='<span style="color:'+(tBid>tAsk?"var(--a)":"var(--r)")+';font-weight:bold">'+(tBid>tAsk?"BUY PRESSURE":"SELL PRESSURE")+'</span>';
+      h+='<span>Ratio: <b>'+ratio.toFixed(3)+'</b></span>';
+      h+='<span>Total: <b>'+totalVol.toFixed(3)+'</b></span>';
+      h+='<span>Levels: <b>'+bids.length+'/'+asks.length+'</b></span></div>';
+
       el.innerHTML=h;
-    }).catch(function(e){if(ld)ld.textContent="Error";});
+    }).catch(function(e){if(ld)ld.textContent="Err";});
 }
 
 function mktSetTF(){}
