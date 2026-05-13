@@ -1611,7 +1611,11 @@ function _mktLoadFP(tf){
       if(!p.length){el.innerHTML='<div style="color:var(--t3);padding:20px">No footprint data</div>';return;}
       var poc=d.poc||0;
       var maxVol=0;p.forEach(function(b){var t=(b.bid_vol||0)+(b.ask_vol||0);if(t>maxVol)maxVol=t;});
-      var bidT=d.bid_vol||0;var askT=d.ask_vol||0;var delta=d.delta||0;var imb=d.imbalance||0;
+      var bidT=d.bid_vol||0;var askT=d.ask_vol||0;var imb=d.imbalance||0;
+      // delta can be array or number
+      var deltaVal=0;
+      if(Array.isArray(d.delta)){d.delta.forEach(function(b){deltaVal+=(b.bid_vol||0)-(b.ask_vol||0);});}
+      else{deltaVal=d.delta||0;}
       var totalVol=bidT+askT;var bidPct=totalVol>0?(bidT/totalVol*100):50;var askPct=100-bidPct;
       var pressure=bidT>askT?"BUY":"SELL";var pressColor=bidT>askT?"var(--a)":"var(--r)";
       var ratio=askT>0?(bidT/askT):0;
@@ -1622,9 +1626,9 @@ function _mktLoadFP(tf){
       h+='<div style="background:rgba(232,197,71,0.1);border:1px solid rgba(232,197,71,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
       h+='<div style="font-size:8px;color:var(--t3)">POC</div><div style="font-size:13px;font-weight:bold;color:#e8c547">'+parseFloat(poc).toFixed(2)+'</div></div>';
       h+='<div style="background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
-      h+='<div style="font-size:8px;color:var(--t3)">DELTA</div><div style="font-size:13px;font-weight:bold;color:'+(delta>=0?"var(--a)":"var(--r)")+'">'+(delta>=0?"+":"")+delta.toFixed(3)+'</div></div>';
+      h+='<div style="font-size:8px;color:var(--t3)">DELTA</div><div style="font-size:13px;font-weight:bold;color:'+(deltaVal>=0?"var(--a)":"var(--r)")+'">'+(deltaVal>=0?"+":"")+deltaVal.toFixed(3)+'</div></div>';
       h+='<div style="background:rgba(0,188,212,0.08);border:1px solid rgba(0,188,212,0.2);border-radius:4px;padding:4px 6px;text-align:center">';
-      h+='<div style="font-size:8px;color:var(--t3)">CVD</div><div style="font-size:13px;font-weight:bold;color:#00bcd4">'+(delta>=0?"+":"")+delta.toFixed(3)+'</div></div>';
+      h+='<div style="font-size:8px;color:var(--t3)">CVD</div><div style="font-size:13px;font-weight:bold;color:#00bcd4">'+(deltaVal>=0?"+":"")+deltaVal.toFixed(3)+'</div></div>';
       h+='</div>';
 
       // Volume pressure bar
@@ -1717,7 +1721,7 @@ function _mktLoadDOM(tf){
         var bb=parseFloat(bids[0][0]);var ba=parseFloat(asks[0][0]);var sp=ba-bb;var spP=(sp/ba*100);
         h+='<div style="text-align:center;padding:3px;background:rgba(232,197,71,0.1);border:1px solid rgba(232,197,71,0.2);border-radius:3px;font-size:9px;margin:2px 0">';
         h+='<span style="color:#e8c547;font-weight:bold">'+bb.toFixed(2)+'</span>';
-        h+='<span style="color:var(--t3);margin:0 6px">SPREAD '+sp.toFixed(2)+' ('+spP.toFixed(4)+'%)</span>';
+        h+='<span style="color:var(--t3);margin:0 6px">SPREAD: '+sp.toFixed(2)+' ('+spP.toFixed(4)+'%)</span>';
         h+='<span style="color:#e8c547;font-weight:bold">'+ba.toFixed(2)+'</span></div>';
       }
 
@@ -1797,7 +1801,7 @@ function _mktUpdateLiveCandle(tf){
   h+='<div style="width:'+bodyPctBar+'%;background:'+(isBull?"rgba(38,166,154,0.4)":"rgba(239,83,80,0.4)")+';display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:bold">'+bodyPctBar.toFixed(0)+'%</div>';
   h+='<div style="width:'+lwPct+'%;background:rgba(170,170,170,0.2);display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--t3)">'+lwPct.toFixed(0)+'%</div>';
   h+='</div>';
-  h+='<div style="display:flex;justify-content:space-between;font-size:7px;color:var(--t3);margin-top:1px"><span>Wick</span><span>Body</span><span>Wick</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:7px;color:var(--t3);margin-top:1px"><span>Upper Wick '+uwPct.toFixed(0)+'%</span><span>Body '+bodyPctBar.toFixed(0)+'%</span><span>Lower Wick '+lwPct.toFixed(0)+'%</span></div>';
   h+='</div>';
 
   // Volume analysis
@@ -1808,7 +1812,7 @@ function _mktUpdateLiveCandle(tf){
   h+='<div style="font-size:9px;color:var(--t3);margin-bottom:2px">Volume Analysis</div>';
   h+='<div style="display:flex;gap:4px;align-items:center">';
   h+='<div style="flex:1;height:8px;border-radius:4px;background:var(--s2);overflow:hidden">';
-  var volBarPct=Math.min(100,(c.vol/(avgVol*3))*100);
+  var volBarPct=avgVol>0?Math.min(100,(c.vol/(avgVol*3))*100):50;
   h+='<div style="width:'+volBarPct+'%;height:100%;background:'+(isBull?"var(--a)":"var(--r)")+';border-radius:4px"></div></div>';
   h+='<span style="font-size:10px;font-weight:bold;color:'+volColor+'">'+volRatio.toFixed(1)+'x</span></div>';
   h+='<div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t3);margin-top:2px">';
