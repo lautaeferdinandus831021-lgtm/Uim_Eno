@@ -1239,37 +1239,45 @@ function _mktInit(){
       var e2=document.getElementById("mkC_"+px+"_B");if(e2)e2.innerHTML=px+" Buy: <b>"+buyL.length+"</b> ("+buyL.join(",")+")";
       var e3=document.getElementById("mkC_"+px+"_S");if(e3)e3.innerHTML=px+" Sell: <b>"+sellL.length+"</b> ("+sellL.join(",")+")";
     });
+
+    // Start chart TFs
     if(cfg.m1_enabled!==false)_mktInitTF("M1",ci.m1||{});
     if(cfg.m5_enabled===true)_mktInitTF("M5",ci.m5||{});
-    // IMMEDIATE FP+DOM+CANDLE load (no dependency on chart data)
-    ["M1","M5"].forEach(function(tf){
-      try{_mktLoadFP(tf);}catch(e){console.error("FP init:",e);}
-      try{_mktLoadDOM(tf);}catch(e){console.error("DOM init:",e);}
-      try{_mktUpdateLiveCandle(tf);}catch(e){console.error("LC init:",e);}
-      try{_mktFetchLiveFP(tf);}catch(e){console.error("LFP init:",e);}
-      // Keep LC updating even if WS fails
-      setInterval(function(){try{_mktUpdateLiveCandle(tf);}catch(e){}},500);
-    });
 
+    // === 500ms MASTER TICK - drives ALL realtime updates ===
     _MK.poll=setInterval(function(){
+      // Live price
       api("GET","/api/market/live").then(function(d){
         if(!d||!d.price)return;
         var pe=document.getElementById("mkPrice");if(pe)pe.textContent="$"+parseFloat(d.price).toLocaleString(undefined,{minimumFractionDigits:2});
         var te=document.getElementById("mkTime");if(te)te.textContent=new Date().toLocaleTimeString();
-        ["M1","M5"].forEach(function(tf){
+      }).catch(function(){});
+
+      // Per-TF updates
+      ["M1","M5"].forEach(function(tf){
+        var st=_MK[tf];if(!st)return;
+        // Signal display
+        api("GET","/api/market/live").then(function(d){
           var s=d[tf.toLowerCase()];
           if(s){var el=document.getElementById("mk"+tf+"Sig");if(el){el.textContent=s.signal||"--";el.style.color=s.signal==="BUY"?"var(--a)":s.signal==="SELL"?"var(--r)":"var(--t3)";}}
-          _mktUpdateLiveCandle(tf);
-          // Refresh footprint canvas if visible
-          var st=_MK[tf];
-          if(st._fpOvl&&st._fpOvl.visible&&st.ch){
-            var r=st.ch.timeScale().getVisibleLogicalRange();
-            if(r){if(st._fpOvl.raf)cancelAnimationFrame(st._fpOvl.raf);
-            st._fpOvl.raf=requestAnimationFrame(function(){_mktDrawFP(tf,r);});}
-          }
-        });
-      }).catch(function(){});
+        }).catch(function(){});
+        // Live Candle panel
+        try{_mktUpdateLiveCandle(tf);}catch(e){}
+        // Footprint Detail
+        try{_mktLoadFP(tf);}catch(e){}
+        // Super DOM
+        try{_mktLoadDOM(tf);}catch(e){}
+        // Footprint canvas redraw
+        if(st._fpOvl&&st._fpOvl.visible&&st.ch){
+          var r=st.ch.timeScale().getVisibleLogicalRange();
+          if(r){if(st._fpOvl.raf)cancelAnimationFrame(st._fpOvl.raf);
+          st._fpOvl.raf=requestAnimationFrame(function(){_mktDrawFP(tf,r);});}
+        }
+        // Live FP overlay data
+        try{_mktFetchLiveFP(tf);}catch(e){}
+      });
     },500);
+
   }).catch(function(e){console.error("Config error:",e);});
 }
 
@@ -1291,17 +1299,14 @@ function _mktInitTF(tf,ciTf){
     new ResizeObserver(function(){if(st.oc)st.oc.applyOptions({width:oel.offsetWidth||600});}).observe(oel);
     st.ch.timeScale().subscribeVisibleLogicalRangeChange(function(r){if(r&&st.oc)try{st.oc.timeScale().setVisibleLogicalRange(r);}catch(e){}});
   }catch(e){console.error(tf+" osc:",e);}
+
+  // Fetch candles then start WS + initial panel loads
   _mktFetch(tf,pair,gm.r,function(){
     try{localStorage.setItem("mk_"+tf,JSON.stringify(st.cd.slice(-200)));}catch(e){}
-    try{_mktApplyAll(tf,ciTf);}catch(e){console.warn("ApplyAll error:",e);}
+    try{_mktApplyAll(tf,ciTf);}catch(e){console.warn("ApplyAll:",e);}
     _mktWS(tf,pair,gm.w);
-    _mktLoadFP(tf);_mktLoadDOM(tf);
-    _mktFetchLiveFP(tf);
-    _mktUpdateLiveCandle(tf);
-    setInterval(function(){_mktLoadDOM(tf);},500);
-    setInterval(function(){_mktLoadFP(tf);},500);
-    setInterval(function(){_mktUpdateLiveCandle(tf);},500);
-    setInterval(function(){_mktFetchLiveFP(tf);},500);
+    // Initial panel loads (master tick will keep them updated at 500ms)
+    _mktLoadFP(tf);_mktLoadDOM(tf);_mktFetchLiveFP(tf);_mktUpdateLiveCandle(tf);
   });
 }
 
@@ -1406,7 +1411,7 @@ function _mktFetchLiveFP(tf){
       st._fpFetching=false;
       if(st._fpOvl&&st._fpOvl.visible&&st.ch){var range=st.ch.timeScale().getVisibleLogicalRange();if(range)_mktDrawFP(tf,range);}
     }).catch(function(){st._fpFetching=false;});
-  if(!st._fpInt){st._fpInt=setInterval(function(){_mktFetchLiveFP(tf);},500);}
+  if(!st._fpInt){st._fpInt=}
 }
 
 function _mktFetch(tf,pair,gran,cb){
