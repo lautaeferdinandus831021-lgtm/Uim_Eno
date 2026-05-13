@@ -1247,6 +1247,8 @@ function _mktInit(){
       try{_mktLoadDOM(tf);}catch(e){console.error("DOM init:",e);}
       try{_mktUpdateLiveCandle(tf);}catch(e){console.error("LC init:",e);}
       try{_mktFetchLiveFP(tf);}catch(e){console.error("LFP init:",e);}
+      // Keep LC updating even if WS fails
+      setInterval(function(){try{_mktUpdateLiveCandle(tf);}catch(e){}},500);
     });
 
     _MK.poll=setInterval(function(){
@@ -1295,8 +1297,11 @@ function _mktInitTF(tf,ciTf){
     _mktWS(tf,pair,gm.w);
     _mktLoadFP(tf);_mktLoadDOM(tf);
     _mktFetchLiveFP(tf);
+    _mktUpdateLiveCandle(tf);
     setInterval(function(){_mktLoadDOM(tf);},500);
     setInterval(function(){_mktLoadFP(tf);},500);
+    setInterval(function(){_mktUpdateLiveCandle(tf);},500);
+    setInterval(function(){_mktFetchLiveFP(tf);},500);
   });
 }
 
