@@ -1171,17 +1171,25 @@ function _mkPanel(tf){
   h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--b)">';
   h+='<div id="mk'+tf+'IB" style="display:flex;gap:4px;flex-wrap:wrap"></div>';
   h+='<div id="mk'+tf+'Sig" style="font-size:12px;font-weight:bold"></div></div>';
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px">';
+  // Column 1: Footprint Detail
   h+='<div style="border:1px solid var(--b);border-radius:6px;overflow:hidden">';
   h+='<div style="background:var(--s2);padding:6px 10px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
   h+='<span style="font-weight:bold;font-size:12px;color:'+tc+'">Footprint Detail</span>';
   h+='<span id="mk'+tf+'FPLoading" style="font-size:10px;color:var(--t3)">--</span></div>';
-  h+='<div id="mk'+tf+'FP" style="height:300px;padding:8px;overflow-y:auto"></div></div>';
+  h+='<div id="mk'+tf+'FP" style="height:320px;padding:8px;overflow-y:auto"></div></div>';
+  // Column 2: Live Candle (NEW)
+  h+='<div style="border:1px solid var(--b);border-radius:6px;overflow:hidden">';
+  h+='<div style="background:var(--s2);padding:6px 10px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
+  h+='<span style="font-weight:bold;font-size:12px;color:'+tc+'">Live Candle '+tf+'</span>';
+  h+='<span id="mk'+tf+'CandleTime" style="font-size:10px;color:var(--t3)">--</span></div>';
+  h+='<div id="mk'+tf+'Candle" style="height:320px;padding:8px;overflow-y:auto"></div></div>';
+  // Column 3: Super DOM
   h+='<div style="border:1px solid var(--b);border-radius:6px;overflow:hidden">';
   h+='<div style="background:var(--s2);padding:6px 10px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">';
   h+='<span style="font-weight:bold;font-size:12px;color:'+tc+'">Super DOM</span>';
   h+='<span id="mk'+tf+'DOMLoading" style="font-size:10px;color:var(--t3)">--</span></div>';
-  h+='<div id="mk'+tf+'DOM" style="height:300px;padding:8px;overflow-y:auto"></div></div></div>';
+  h+='<div id="mk'+tf+'DOM" style="height:320px;padding:8px;overflow-y:auto"></div></div></div>';
   h+='<div style="margin-top:8px;border:1px solid var(--b);border-radius:6px;padding:8px">';
   h+='<div style="font-weight:bold;font-size:12px;color:'+tc+';margin-bottom:6px">'+tf+' Signal Analysis</div>';
   h+='<div id="mk'+tf+'An" style="font-size:11px;color:var(--t3)">Loading...</div></div>';
@@ -1239,6 +1247,7 @@ function _mktInit(){
         ["M1","M5"].forEach(function(tf){
           var s=d[tf.toLowerCase()];
           if(s){var el=document.getElementById("mk"+tf+"Sig");if(el){el.textContent=s.signal||"--";el.style.color=s.signal==="BUY"?"var(--a)":s.signal==="SELL"?"var(--r)":"var(--t3)";}}
+          _mktUpdateLiveCandle(tf);
           // Refresh footprint canvas if visible
           var st=_MK[tf];
           if(st._fpOvl&&st._fpOvl.visible&&st.ch){
@@ -1418,6 +1427,7 @@ function _mktWS(tf,pair,ch){
         else if(!last||candle.time>last.time){st.cd.push(candle);}
         if(st.ser.candle)try{st.ser.candle.update(candle);}catch(e){}
         _mktLive(tf);
+        _mktUpdateLiveCandle(tf);
         // Redraw footprint canvas if in footprint mode
         if(st._fpOvl&&st._fpOvl.visible&&st.ch){
           var r=st.ch.timeScale().getVisibleLogicalRange();
@@ -1722,6 +1732,99 @@ function _mktLoadDOM(tf){
 
       el.innerHTML=h;
     }).catch(function(e){if(ld)ld.textContent="Err";});
+}
+
+function _mktUpdateLiveCandle(tf){
+  var st=_MK[tf];if(!st||!st.cd||st.cd.length<1)return;
+  var el=document.getElementById("mk"+tf+"Candle");if(!el)return;
+  var tmEl=document.getElementById("mk"+tf+"CandleTime");if(tmEl)tmEl.textContent=new Date().toLocaleTimeString();
+  var data=st.cd;var c=data[data.length-1];if(!c)return;
+  var prev=data.length>1?data[data.length-2]:null;
+  var chg=prev?(c.close-prev.close):0;
+  var chgP=prev&&prev.close>0?(chg/prev.close*100):0;
+  var isBull=c.close>=c.open;
+  var body=Math.abs(c.close-c.open);
+  var range=c.high-c.low;
+  var upperWick=isBull?(c.high-c.close):(c.high-c.open);
+  var lowerWick=isBull?(c.open-c.low):(c.close-c.low);
+  var bodyPct=range>0?(body/range*100):0;
+  var ci=_MK.ci[tf.toLowerCase()]||{};
+  var on=function(o){return o&&o.enabled!==false;};
+
+  var h='';
+  // Price header
+  h+='<div style="text-align:center;margin-bottom:6px">';
+  h+='<div style="font-size:20px;font-weight:bold;color:'+(isBull?"var(--a)":"var(--r)")+'">'+parseFloat(c.close).toFixed(2)+'</div>';
+  h+='<div style="font-size:11px;color:'+(chg>=0?"var(--a)":"var(--r)")+'">'+(chg>=0?"+":"")+chg.toFixed(2)+' ('+(chgP>=0?"+":"")+chgP.toFixed(3)+'%)</div></div>';
+
+  // OHLCV cards
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:6px">';
+  h+='<div style="background:var(--s2);border-radius:3px;padding:3px 5px;text-align:center"><div style="font-size:7px;color:var(--t3)">OPEN</div><div style="font-size:11px;font-weight:bold;color:var(--t1)">'+c.open.toFixed(2)+'</div></div>';
+  h+='<div style="background:var(--s2);border-radius:3px;padding:3px 5px;text-align:center"><div style="font-size:7px;color:var(--t3)">HIGH</div><div style="font-size:11px;font-weight:bold;color:var(--a)">'+c.high.toFixed(2)+'</div></div>';
+  h+='<div style="background:var(--s2);border-radius:3px;padding:3px 5px;text-align:center"><div style="font-size:7px;color:var(--t3)">LOW</div><div style="font-size:11px;font-weight:bold;color:var(--r)">'+c.low.toFixed(2)+'</div></div>';
+  h+='<div style="background:var(--s2);border-radius:3px;padding:3px 5px;text-align:center"><div style="font-size:7px;color:var(--t3)">CLOSE</div><div style="font-size:11px;font-weight:bold;color:'+(isBull?"var(--a)":"var(--r)")+'">'+c.close.toFixed(2)+'</div></div>';
+  h+='<div style="background:var(--s2);border-radius:3px;padding:3px 5px;text-align:center"><div style="font-size:7px;color:var(--t3)">VOLUME</div><div style="font-size:11px;font-weight:bold;color:#00bcd4">'+c.vol.toFixed(3)+'</div></div>';
+  h+='<div style="background:var(--s2);border-radius:3px;padding:3px 5px;text-align:center"><div style="font-size:7px;color:var(--t3)">RANGE</div><div style="font-size:11px;font-weight:bold;color:#e8c547">'+range.toFixed(2)+'</div></div>';
+  h+='</div>';
+
+  // Candle structure bar
+  h+='<div style="margin-bottom:6px">';
+  h+='<div style="font-size:9px;color:var(--t3);margin-bottom:2px">Candle Structure</div>';
+  h+='<div style="height:16px;border-radius:3px;overflow:hidden;display:flex;position:relative;background:var(--s2)">';
+  // Upper wick
+  var uwPct=range>0?(upperWick/range*100):20;
+  var bodyPctBar=range>0?(body/range*100):60;
+  var lwPct=range>0?(lowerWick/range*100):20;
+  h+='<div style="width:'+uwPct+'%;background:rgba(170,170,170,0.2);display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--t3)">'+uwPct.toFixed(0)+'%</div>';
+  h+='<div style="width:'+bodyPctBar+'%;background:'+(isBull?"rgba(38,166,154,0.4)":"rgba(239,83,80,0.4)")+';display:flex;align-items:center;justify-content:center;font-size:7px;color:#fff;font-weight:bold">'+bodyPctBar.toFixed(0)+'%</div>';
+  h+='<div style="width:'+lwPct+'%;background:rgba(170,170,170,0.2);display:flex;align-items:center;justify-content:center;font-size:7px;color:var(--t3)">'+lwPct.toFixed(0)+'%</div>';
+  h+='</div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:7px;color:var(--t3);margin-top:1px"><span>Wick</span><span>Body</span><span>Wick</span></div>';
+  h+='</div>';
+
+  // Volume analysis
+  var avgVol=0;for(var i=Math.max(0,data.length-20);i<data.length;i++)avgVol+=data[i].vol;avgVol/=Math.min(20,data.length);
+  var volRatio=avgVol>0?(c.vol/avgVol):1;
+  var volColor=volRatio>2?"#e8c547":volRatio>1?"var(--a)":volRatio<0.5?"var(--r)":"var(--t3)";
+  h+='<div style="margin-bottom:6px">';
+  h+='<div style="font-size:9px;color:var(--t3);margin-bottom:2px">Volume Analysis</div>';
+  h+='<div style="display:flex;gap:4px;align-items:center">';
+  h+='<div style="flex:1;height:8px;border-radius:4px;background:var(--s2);overflow:hidden">';
+  var volBarPct=Math.min(100,(c.vol/(avgVol*3))*100);
+  h+='<div style="width:'+volBarPct+'%;height:100%;background:'+(isBull?"var(--a)":"var(--r)")+';border-radius:4px"></div></div>';
+  h+='<span style="font-size:10px;font-weight:bold;color:'+volColor+'">'+volRatio.toFixed(1)+'x</span></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t3);margin-top:2px">';
+  h+='<span>Avg: '+avgVol.toFixed(3)+'</span>';
+  h+='<span>Cur: '+c.vol.toFixed(3)+'</span>';
+  h+='<span style="color:'+volColor+';font-weight:bold">'+(volRatio>1.5?"HIGH":volRatio<0.5?"LOW":"NORMAL")+'</span></div></div>';
+
+  // Indicator signals for current candle
+  h+='<div style="margin-bottom:4px">';
+  h+='<div style="font-size:9px;color:var(--t3);margin-bottom:2px">Current Signals</div>';
+  var sigCount=0;
+  if(on(ci.rsi)){var r=mktCalcRSI(data,ci.rsi.period||14);if(r.length){var rv=r[r.length-1].value;var rColor=rv>70?"var(--r)":rv<30?"var(--a)":"var(--t3)";h+='<div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0"><span>RSI('+ci.rsi.period+')</span><span style="color:'+rColor+';font-weight:bold">'+rv.toFixed(1)+'</span></div>';sigCount++;}}
+  if(on(ci.ema)){var e=mktCalcEMA(data,ci.ema.period||20);if(e.length){var ev=e[e.length-1].value;var ePos=c.close>ev?"Above":"Below";h+='<div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0"><span>EMA('+ci.ema.period+')</span><span style="color:'+(c.close>ev?"var(--a)":"var(--r)")+'">'+ePos+' '+ev.toFixed(2)+'</span></div>';sigCount++;}}
+  if(on(ci.macd)){var m=mktCalcMACD(data,ci.macd.fast||12,ci.macd.slow||26,ci.macd.signal||9);if(m.length){var ml=m[m.length-1];h+='<div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0"><span>MACD</span><span style="color:'+(ml.histogram>=0?"var(--a)":"var(--r)")+'">'+(ml.histogram>=0?"+":"")+ml.histogram.toFixed(3)+'</span></div>';sigCount++;}}
+  if(on(ci.bb)){var bb=mktCalcBB(data,ci.bb.period||20,ci.bb.std||2);if(bb.length){var bl=bb[bb.length-1];var bbPos=c.close>bl.upper?"Above Upper":c.close<bl.lower?"Below Lower":"Inside";h+='<div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0"><span>BB('+ci.bb.period+')</span><span style="color:'+(bbPos==="Inside"?"var(--t3)":"#e8c547")+'">'+bbPos+'</span></div>';sigCount++;}}
+  if(on(ci.vwap)){var v=mktCalcVWAP(data);if(v.length){var vv=v[v.length-1].value;h+='<div style="display:flex;justify-content:space-between;font-size:9px;padding:1px 0"><span>VWAP</span><span style="color:'+(c.close>vv?"var(--a)":"var(--r)")+'">'+(c.close>vv?"Above":"Below")+' '+vv.toFixed(2)+'</span></div>';sigCount++;}}
+  if(sigCount===0)h+='<div style="font-size:9px;color:var(--t3)">No active indicators</div>';
+  h+='</div>';
+
+  // Time remaining
+  var gm=_GM[tf];var durMs=gm.r==="1min"?60000:300000;
+  var elapsed=Date.now()-(c.time*1000);
+  var remaining=Math.max(0,durMs-elapsed);
+  var remSec=Math.floor(remaining/1000);
+  var remPct=Math.min(100,(elapsed/durMs)*100);
+  h+='<div style="margin-top:4px">';
+  h+='<div style="font-size:9px;color:var(--t3);margin-bottom:2px">Candle Time</div>';
+  h+='<div style="height:6px;border-radius:3px;background:var(--s2);overflow:hidden">';
+  h+='<div style="width:'+remPct+'%;height:100%;background:'+(remPct>80?"var(--r)":remPct>50?"#e8c547":"var(--a)")+';border-radius:3px"></div></div>';
+  h+='<div style="display:flex;justify-content:space-between;font-size:8px;color:var(--t3);margin-top:1px">';
+  h+='<span>'+remSec+'s remaining</span>';
+  h+='<span>'+remPct.toFixed(0)+'% elapsed</span></div></div>';
+
+  el.innerHTML=h;
 }
 
 function mktSetTF(){}
