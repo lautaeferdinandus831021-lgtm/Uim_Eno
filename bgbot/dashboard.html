@@ -1229,8 +1229,8 @@ function _mktInit(){
     _MK.pair=cfg.pair||"BTCUSDT";_MK.fcfg=cfg;
     var el=document.getElementById("mkPair");if(el)el.textContent=_MK.pair;
     var mode=cfg.mode||"spot";var acc=cfg.balance_type||"demo";
-    var me=document.getElementById("mkCMode");if(me)me.innerHTML="Mode: <b style=\"color:"+(mode==="perpetual"?"#ff6b9d":"#00d4aa")+"\">"+mode.toUpperCase()+"</b>";
-    var ae=document.getElementById("mkCAcc");if(ae)ae.innerHTML="Account: <b style=\"color:"+(acc==="real"?"var(--r)":"var(--a)")+"\">"+acc.toUpperCase()+"</b>"+(acc==="real"?" !!!":"");
+    var me=document.getElementById("mkCMode");if(me)me.innerHTML='Mode: <b style="color:'+(mode==="perpetual"?"#ff6b9d":"#00d4aa")+'">'+mode.toUpperCase()+'</b>';
+    var ae=document.getElementById("mkCAcc");if(ae)ae.innerHTML='Account: <b style="color:'+(acc==="real"?"var(--r)":"var(--a)")+'">'+acc.toUpperCase()+'</b>'+(acc==="real"?" !!!":"");
     ["m1","m5"].forEach(function(tf){
       var ctf=ci[tf]||{};var onL=[];var buyL=[];var sellL=[];
       Object.keys(_IN).forEach(function(k){var cK=ctf[k];if(cK&&cK.enabled!==false)onL.push(_IN[k]);if(cK&&cK.buy_enabled)buyL.push(_IN[k]);if(cK&&cK.sell_enabled)sellL.push(_IN[k]);});
@@ -1411,7 +1411,7 @@ function _mktFetchLiveFP(tf){
       st._fpFetching=false;
       if(st._fpOvl&&st._fpOvl.visible&&st.ch){var range=st.ch.timeScale().getVisibleLogicalRange();if(range)_mktDrawFP(tf,range);}
     }).catch(function(){st._fpFetching=false;});
-  if(!st._fpInt){st._fpInt=}
+  if(!st._fpInt){st._fpInt=setInterval(function(){_mktFetchLiveFP(tf);},500);}
 }
 
 function _mktFetch(tf,pair,gran,cb){
