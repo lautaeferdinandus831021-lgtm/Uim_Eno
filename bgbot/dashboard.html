@@ -1259,7 +1259,10 @@ function _mktInitTF(tf,ciTf){
     try{localStorage.setItem("mk_"+tf,JSON.stringify(st.cd.slice(-200)));}catch(e){}
     _mktApplyAll(tf,ciTf);_mktWS(tf,pair,gm.w);
     _mktLoadFP(tf);_mktLoadDOM(tf);
-    setInterval(function(){_mktLoadFP(tf);_mktLoadDOM(tf);},10000);
+    _mktFetchLiveFP(tf);
+    // Realtime refresh: DOM every 3s, FP every 5s
+    setInterval(function(){_mktLoadDOM(tf);},3000);
+    setInterval(function(){_mktLoadFP(tf);},5000);
   });
 }
 
@@ -1400,6 +1403,12 @@ function _mktWS(tf,pair,ch){
         else if(!last||candle.time>last.time){st.cd.push(candle);}
         if(st.ser.candle)try{st.ser.candle.update(candle);}catch(e){}
         _mktLive(tf);
+        // Redraw footprint canvas if in footprint mode
+        if(st._fpOvl&&st._fpOvl.visible&&st.ch){
+          var r=st.ch.timeScale().getVisibleLogicalRange();
+          if(r){if(st._fpOvl.raf)cancelAnimationFrame(st._fpOvl.raf);
+          st._fpOvl.raf=requestAnimationFrame(function(){_mktDrawFP(tf,r);});}
+        }
         if(st.cd.length%10===0)try{localStorage.setItem("mk_"+tf,JSON.stringify(st.cd.slice(-200)));}catch(e){}
       }catch(e){}
     };
