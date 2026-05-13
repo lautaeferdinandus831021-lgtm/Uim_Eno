@@ -1226,14 +1226,29 @@ function _mktInit(){
     });
     if(cfg.m1_enabled!==false)_mktInitTF("M1",ci.m1||{});
     if(cfg.m5_enabled===true)_mktInitTF("M5",ci.m5||{});
+    // Immediate FP+DOM load for all TFs
+    ["M1","M5"].forEach(function(tf){
+      setTimeout(function(){_mktLoadFP(tf);_mktLoadDOM(tf);},500);
+    });
+
     _MK.poll=setInterval(function(){
       api("GET","/api/market/live").then(function(d){
         if(!d||!d.price)return;
         var pe=document.getElementById("mkPrice");if(pe)pe.textContent="$"+parseFloat(d.price).toLocaleString(undefined,{minimumFractionDigits:2});
         var te=document.getElementById("mkTime");if(te)te.textContent=new Date().toLocaleTimeString();
-        ["M1","M5"].forEach(function(tf){var s=d[tf.toLowerCase()];if(s){var el=document.getElementById("mk"+tf+"Sig");if(el){el.textContent=s.signal||"--";el.style.color=s.signal==="BUY"?"var(--a)":s.signal==="SELL"?"var(--r)":"var(--t3)";}}});
+        ["M1","M5"].forEach(function(tf){
+          var s=d[tf.toLowerCase()];
+          if(s){var el=document.getElementById("mk"+tf+"Sig");if(el){el.textContent=s.signal||"--";el.style.color=s.signal==="BUY"?"var(--a)":s.signal==="SELL"?"var(--r)":"var(--t3)";}}
+          // Refresh footprint canvas if visible
+          var st=_MK[tf];
+          if(st._fpOvl&&st._fpOvl.visible&&st.ch){
+            var r=st.ch.timeScale().getVisibleLogicalRange();
+            if(r){if(st._fpOvl.raf)cancelAnimationFrame(st._fpOvl.raf);
+            st._fpOvl.raf=requestAnimationFrame(function(){_mktDrawFP(tf,r);});}
+          }
+        });
       }).catch(function(){});
-    },2000);
+    },500);
   }).catch(function(e){console.error("Config error:",e);});
 }
 
@@ -1261,8 +1276,8 @@ function _mktInitTF(tf,ciTf){
     _mktLoadFP(tf);_mktLoadDOM(tf);
     _mktFetchLiveFP(tf);
     // Realtime refresh: DOM every 3s, FP every 5s
-    setInterval(function(){_mktLoadDOM(tf);},3000);
-    setInterval(function(){_mktLoadFP(tf);},5000);
+    setInterval(function(){_mktLoadDOM(tf);},500);
+    setInterval(function(){_mktLoadFP(tf);},500);
   });
 }
 
@@ -1367,7 +1382,7 @@ function _mktFetchLiveFP(tf){
       st._fpFetching=false;
       if(st._fpOvl&&st._fpOvl.visible&&st.ch){var range=st.ch.timeScale().getVisibleLogicalRange();if(range)_mktDrawFP(tf,range);}
     }).catch(function(){st._fpFetching=false;});
-  if(!st._fpInt){st._fpInt=setInterval(function(){if(st._fpOvl&&st._fpOvl.visible)_mktFetchLiveFP(tf);},3000);}
+  if(!st._fpInt){st._fpInt=setInterval(function(){_mktFetchLiveFP(tf);},500);}
 }
 
 function _mktFetch(tf,pair,gran,cb){
@@ -1413,7 +1428,7 @@ function _mktWS(tf,pair,ch){
       }catch(e){}
     };
     st.ws.onerror=function(){_mktWB(tf,false);};
-    st.ws.onclose=function(){st.wok=false;_mktWB(tf,false);if(st.wrt)clearTimeout(st.wrt);st.wrt=setTimeout(function(){st.wry++;if(st.wry<=200)_mktWS(tf,pair,ch);},1000);};
+    st.ws.onclose=function(){st.wok=false;_mktWB(tf,false);if(st.wrt)clearTimeout(st.wrt);st.wrt=setTimeout(function(){st.wry++;if(st.wry<=200)_mktWS(tf,pair,ch);},500);};
   }catch(e){_mktWB(tf,false);if(st.wrt)clearTimeout(st.wrt);st.wrt=setTimeout(function(){_mktWS(tf,pair,ch);},1000);}
 }
 
@@ -1571,7 +1586,7 @@ function _mktLoadFP(tf){
   var ld=document.getElementById("mk"+tf+"FPLoading");if(ld)ld.textContent="Loading...";
   api("GET","/api/market/footprint?symbol="+_MK.pair+"&bins=20")
     .then(function(d){
-      if(ld)ld.textContent="Live";
+      if(ld)ld.textContent="Live "+new Date().toLocaleTimeString();
       var p=d.profile||[];
       if(!p.length){el.innerHTML='<div style="color:var(--t3);padding:20px">No data</div>';return;}
       var poc=d.poc||0;var maxVol=0;p.forEach(function(b){var t=(b.bid_vol||0)+(b.ask_vol||0);if(t>maxVol)maxVol=t;});
@@ -1609,7 +1624,7 @@ function _mktLoadDOM(tf){
   var ld=document.getElementById("mk"+tf+"DOMLoading");if(ld)ld.textContent="Loading...";
   api("GET","/api/market/orderbook?symbol="+_MK.pair+"&limit=20")
     .then(function(d){
-      if(ld)ld.textContent="Live";
+      if(ld)ld.textContent="Live "+new Date().toLocaleTimeString();
       var bids=d.bids||[];var asks=d.asks||[];
       if(!bids.length&&!asks.length){el.innerHTML='<div style="color:var(--t3);padding:20px">No data</div>';return;}
       var maxVol=0;bids.concat(asks).forEach(function(r){var v=parseFloat(r[1])||0;if(v>maxVol)maxVol=v;});
