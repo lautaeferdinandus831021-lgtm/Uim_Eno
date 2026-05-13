@@ -261,7 +261,7 @@ function loadFP(tf){
     h+='<div class="card"><div class="label">DELTA</div><div class="value" style="color:'+(deltaVal>=0?'var(--a)':'var(--r)')+'">'+(deltaVal>=0?'+':'')+deltaVal.toFixed(3)+'</div></div>';
     h+='<div class="card"><div class="label">CVD</div><div class="value" style="color:var(--cyan)">'+(deltaVal>=0?'+':'')+deltaVal.toFixed(3)+'</div></div></div>';
     h+='<div class="pressure-bar"><div class="bid" style="width:'+bidPct+'%">'+bidPct.toFixed(0)+'%</div><div class="ask" style="width:'+askPct+'%">'+askPct.toFixed(0)+'%</div></div>';
-    h+='<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:4px"><span style="color:var(--a)">Bid: '+bidT.toFixed(3)+'</span><span style="color:'+(bidT>askT?'var(--a)':'var(--r)")+';font-weight:700">'+(bidT>askT?'BUY':'SELL')+' PRESSURE</span><span style="color:var(--r)">Ask: '+askT.toFixed(3)+'</span></div>';
+    h+='<div style="display:flex;justify-content:space-between;font-size:9px;margin-bottom:4px"><span style="color:var(--a)">Bid: '+bidT.toFixed(3)+'</span><span style="color:'+(bidT>askT?'var(--a)':'var(--r)')+';font-weight:700">'+(bidT>askT?'BUY':'SELL')+' PRESSURE</span><span style="color:var(--r)">Ask: '+askT.toFixed(3)+'</span></div>';
     p.forEach(function(b){
       var price=parseFloat(b.price);var bv=b.bid_vol||0;var av=b.ask_vol||0;var bd=b.delta||0;var tot=bv+av;
       var pct=maxVol>0?(tot/maxVol*100):0;var bidP=tot>0?(bv/tot*100):50;var isPoc=Math.abs(price-poc)<0.5;
