@@ -1703,3 +1703,13 @@ async def dashboard():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=False)
+@app.get("/live")
+async def live_market():
+    import os
+    fp = os.path.join(os.path.dirname(__file__), "market_live.html")
+    if os.path.exists(fp):
+        from fastapi.responses import HTMLResponse
+        with open(fp) as f:
+            return HTMLResponse(f.read())
+    return {"error": "not found"}
+
